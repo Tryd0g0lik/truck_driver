@@ -42,8 +42,7 @@ urlpatterns = [
     path("api/", include((api_urls, "api_keys"), namespace="api_keys")),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="redoc"),
     # Person app routes
-    re_path(r"^register/", include("person.urls")),
-    re_path(r"^profile/", include("person.urls")),
+
     # Static and media files
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
