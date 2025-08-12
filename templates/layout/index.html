@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+{% load render_bundle from webpack_loader %}
+{% load static %}
+<html lang = "en" data-ds-theme='dark-theme'>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Title</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>{% block title %}{{title}}{% endblock title %} - Page</title>
+    {% block maincssfiles %}
+      <!-- Basic file of style -->
+      <link rel="stylesheet" type="text/css" href="{% static 'styles/index.css' %}">
+    {% endblock maincssfiles %}
+    <!-- Below is an additional files -->
+    {% block cssfiles %} {% endblock cssfiles %}
+
+
+    {% block jsfiles %}
+      <!-- We have files with the dynamic's name -->
+      {% for file in js_files %}
+        <script src="{% static '/' %}{{file}}"></script>
+      {% endfor %}
+    {% endblock jsfiles %}
+</head>
+<body>
+
+</body>
+</html>
