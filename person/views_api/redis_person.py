@@ -5,7 +5,7 @@ from typing import Dict, Union, Any
 from redis.asyncio.client import Redis
 from redis.exceptions import ConnectionError
 
-from dotenv_ import DB_TO_RADIS_HOST
+from dotenv_ import DB_TO_RADIS_HOST, DB_TO_RADIS_PORT
 from logs import configure_logging
 from person.binaries import Binary
 from person.views_api.serializers import CacheUsersSerializer
@@ -18,7 +18,7 @@ class RedisOfPerson(Redis, Binary):
     def __init__(
         self,
         host: str = f"{DB_TO_RADIS_HOST}",
-        port: int = 6380,
+        port: int = f"{DB_TO_RADIS_PORT}",
         db: Union[str, int] = 1,
     ):
         super().__init__(host=host, port=port, db=db)

@@ -1,6 +1,6 @@
 import logging
 from django.apps import AppConfig
-from django.contrib.auth.models import Group, Permission
+
 from django.dispatch import Signal
 from logs import configure_logging
 from dotenv import load_dotenv
@@ -26,6 +26,7 @@ class PersonConfig(AppConfig):
          - 'delete_driverreport' removing the forms/black of truck driver.
         :return:
         """
+        from django.contrib.auth.models import Group, Permission
         groups_permissions = {
             "BASE": ["view_driverreport"],
             "DRIVER": ["view_driverreport", "add_driverreport", "change_driverreport"],

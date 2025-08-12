@@ -11,7 +11,7 @@ from dotenv_ import DB_TO_RADIS_CACHE_USERS, DB_TO_RADIS_PORT, DB_TO_RADIS_HOST
 from logs import configure_logging
 from person.interfaces import TypeUser
 from person.models import Users
-from person.serializers import CacheUsersSerializer
+from person.views_api.serializers import CacheUsersSerializer
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.settings")
 
@@ -56,7 +56,7 @@ def person_to_redis(user_id_list: list[int]) -> Union[TypeUser, dict]:
     log.info("START CACHE: %s" % __name__)
     client = Redis(
         host=f"{DB_TO_RADIS_HOST}",
-        port=f"{DB_TO_RADIS_PORT}",
+        port=6380,
         db=DB_TO_RADIS_CACHE_USERS,
     )
 
