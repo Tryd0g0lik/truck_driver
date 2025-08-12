@@ -1,1 +1,1 @@
-Активация пользователя {{ username }}
+User activation {{ username }}

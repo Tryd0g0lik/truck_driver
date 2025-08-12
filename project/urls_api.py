@@ -1,4 +1,6 @@
 # from person.urls_api import router as person_router
 from django.urls import path, include
-
-urlpatterns = []
+from person.urls_api import router as person_router
+urlpatterns = [
+    path("auth/", include(person_router.urls), name="auth_api"),
+]

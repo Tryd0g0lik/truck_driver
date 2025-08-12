@@ -5,12 +5,16 @@ import logging
 import asyncio
 import re
 from datetime import datetime
+from tkinter.scrolledtext import example
 from typing import Any
+from collections.abc import Callable
 from django.db import connections
 from django.http import JsonResponse, HttpRequest, HttpResponse
 from rest_framework.response import Response
 from rest_framework import serializers, status
 from adrf.viewsets import ViewSet
+from unicodedata import category
+from django.contrib.auth.models import Group
 from person.apps import signal_user_registered
 from person.tasks.task_cache_hew_user import task_postman_for_user_id
 from person.models import Users
@@ -19,6 +23,7 @@ from person.views_api.redis_person import RedisOfPerson
 from person.views_api.serializers import (
     AsyncUsersSerializer
 )
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
 
@@ -33,6 +38,9 @@ load_dotenv()
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
 
+async def sync_for_async(fn: Callable[[Any], Any], *args, **kwargs):
+    return await asyncio.create_task(asyncio.to_thread(fn, *args, **kwargs))
+
 def new_connection(data) -> list:
     """
     new user cheks on the duplicate
@@ -42,7 +50,7 @@ def new_connection(data) -> list:
     with connections["default"].cursor() as cursor:
         try:
             cursor.execute(
-                """SELECT * FROM person_users WHERE username = '%s' AND email = '%s';"""
+                """SELECT * FROM person WHERE username = '%s' AND email = '%s';"""
                 % (data.get("username"), data.get("email"))
             )
         except Exception as error:
@@ -63,7 +71,44 @@ async def iterator_get_person_cache(client: type(RedisOfPerson)):
     for key in keys:
         yield key
 
+
 class UserViews(ViewSet):
+
+    @swagger_auto_schema(
+        operation_description="""
+            Method: POST and the fixed pathname of '/api/auth/person/'\
+            Example PATHNAME: "{{url_base}}/api/auth/person/"\
+            @param: str category: Single line from total list, it user must choose/select.\
+            Total list from category: BASE, DRIVER, MANAGER, ADMIN. It's roles for user. Everyone \
+            role contain the list permissions.
+            """,
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            title="BodyData",
+            in_=openapi.IN_BODY,
+            required=["username", "password"],
+            properties={
+                "username": openapi.Schema(
+                    example="<user_name>", type=openapi.TYPE_STRING
+                ),
+                "email": openapi.Schema(
+                    example="<user_email>", type=openapi.TYPE_STRING
+                ),
+                "password": openapi.Schema(
+                    example="nH2qGiehvEXjNiYqp3bOVtAYv....", type=openapi.TYPE_STRING
+                ),
+                "category": openapi.Schema(
+                    example="BASE", type=openapi.TYPE_STRING
+                )
+            },
+        ),
+        responses={
+            201: "Ok",
+            401: "Not Ok",
+            500: "Something what wrong. Read the response variable 'data'",
+        },
+        tags=["person"],
+    )
     async def create(self, request: HttpRequest) -> type(Response):
         """
         TODO: validate for the user's email need add
@@ -107,7 +152,16 @@ class UserViews(ViewSet):
                 await self.serializer_validate(serializer)
                 serializer.validated_data["password"] = password_hes
                 await serializer.asave()
+
                 data: dict = dict(serializer.data).copy()
+                group_list = Group.objects.filter(name=data.get("category"))
+                if len(group_list) > 0:
+                    user_new = [view async for view in Users.objects.filter(pk=data.get("id"))]
+                    add =user_new[0].groups.add
+
+                    await sync_for_async(add, *group_list)
+
+                    await user_new[0].asave()
                 # # RUN THE TASK - Update CACHE's USER -send id to the redis from celer's task
                 task_postman_for_user_id.delay((data.__getitem__("id"),))
             except Exception as error:

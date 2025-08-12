@@ -37,10 +37,7 @@ def send_activation_notificcation(user) -> bool:
             template_name="email/activation_letter_subject.txt",
             context=context,
         )
-        # LETTER 2
-        file_name = "email/activation_letter_body.txt"
-        if user.is_superuser:
-            file_name.replace(file_name, "email/activation_admin_letter_body.txt")
+
 
         # user_dict = UsersSerializer()
         body_text = render_to_string(

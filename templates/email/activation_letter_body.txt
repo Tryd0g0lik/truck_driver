@@ -1,10 +1,10 @@
-Уважаемый пользователь {{ username }}!
-Вы зарегистрировались на сервисе "MateImageAI".
-Вам необходимо выполнить активацию, чтобы подтвердить свою личность.
-Для этого пройдите, пожалуйста, по ссылке
+Hallo dear {{ username }}!
+You have been registered in TRUCK DRIVER.
+Now, you need to do authentification.
+For this, pleas to click by link and follow to our service.
 
 {{ host }}{% url 'person_app:user_activate' sign %}
 
-Ждём Вас!
+We, waiting for you!
 
-С уважением администрация сайта "The Account".
+Administration of TRUCK DRIVER.
