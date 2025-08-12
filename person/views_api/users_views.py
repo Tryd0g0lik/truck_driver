@@ -1,6 +1,7 @@
 import base64
 import json
 import time
+import logging
 import asyncio
 import re
 from datetime import datetime
@@ -13,6 +14,7 @@ from adrf.viewsets import ViewSet
 from person.apps import signal_user_registered
 from person.tasks.task_cache_hew_user import task_postman_for_user_id
 from person.models import Users
+from person.hasher import Hasher
 from person.views_api.redis_person import RedisOfPerson
 from person.views_api.serializers import (
     AsyncUsersSerializer
@@ -22,9 +24,15 @@ from drf_yasg.utils import swagger_auto_schema
 
 from project.settings import SIMPLE_JWT
 from person.binaries import Binary
-import logging
+from dotenv_ import SECRET_KEY_DJ
+
 from logs import configure_logging
 from dotenv import load_dotenv
+
+load_dotenv()
+log = logging.getLogger(__name__)
+configure_logging(logging.INFO)
+
 def new_connection(data) -> list:
     """
     new user cheks on the duplicate
@@ -32,14 +40,19 @@ def new_connection(data) -> list:
     :return:
     """
     with connections["default"].cursor() as cursor:
-        cursor.execute(
-            """SELECT * FROM person_users WHERE username = '%s' AND email = '%s';"""
-            % (data.get("username"), data.get("email"))
-        )
+        try:
+            cursor.execute(
+                """SELECT * FROM person_users WHERE username = '%s' AND email = '%s';"""
+                % (data.get("username"), data.get("email"))
+            )
+        except Exception as error:
+            log.error("%s: Error => %s" % (__name__ + "::" + new_connection.__name__, error.args[0]))
+            raise ValueError("%s: Error => %s" % (__name__ + "::" + new_connection.__name__, error.args[0]))
         # POSTGRES_DB
         resp_list = cursor.fetchall()
         users_list = [view for view in resp_list]
     return users_list
+
 
 async def iterator_get_person_cache(client: type(RedisOfPerson)):
     """
@@ -52,8 +65,26 @@ async def iterator_get_person_cache(client: type(RedisOfPerson)):
 
 class UserViews(ViewSet):
     async def create(self, request: HttpRequest) -> type(Response):
+        """
+        TODO: validate for the user's email need add
+        :param request:
+        :return:
+        """
         user = request.user
         data = request.data
+        try:
+            # Validators
+            check_validate = [self.validate_username(data.get("username"))]
+            check_validate.append(self.validate_password(data.get("password")))
+            fals_data = [item for item in check_validate if not item]
+            if len(fals_data) > 0:
+                log.error("%s: data is not validate" % UserViews.__class__.__name__ + "." + self.create.__name__)
+                raise ValueError("%s: data is not validate" % UserViews.__class__.__name__ + "." + self.create.__name__)
+        except (AttributeError, TypeError, Exception) as error:
+            return Response(
+                {"data": " Data type is not validate: %s" % error.args},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
         response = Response(status=status.HTTP_401_UNAUTHORIZED)
 
         try:
@@ -63,12 +94,11 @@ class UserViews(ViewSet):
             )
 
         except Exception as error:
-            # RESPONSE WILL SEND. CODE 500
+            # RESPONSE WILL SEND. CODE 401
             response.data = {"data": error.args}
-            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            response.status_code = status.HTTP_401_UNAUTHORIZED
             return response
-        # Condition - If the length of the users_list has more zero, it's mean what user has a duplicate.
-        # Response will be return 401.
+
         if not user.is_authenticated and len(users_list) == 0:
             try:
                 password_hes = self.get_hash_password(data.get("password"))
@@ -116,3 +146,35 @@ class UserViews(ViewSet):
         response.data = {"data": "User was created before."}
         return response
 
+    @staticmethod
+    def get_hash_password(password: str) -> str:
+        """
+        This method for hashing user password.
+        :param password: Password of user before hashing (from request)
+        :return: password hashed
+        """
+        try:
+            # HASH PASSWORD OF USER
+            hash = Hasher()
+            salt = SECRET_KEY_DJ.replace("$", "/")
+            hash_password = hash.hashing(password, salt)
+            return hash_password
+        except Exception as error:
+            raise ValueError(error)
+
+    @staticmethod
+    async def serializer_validate(serializer):
+        is_valid = await asyncio.create_task(asyncio.to_thread(serializer.is_valid))
+        if not is_valid:
+            raise serializers.ValidationError(serializer.errors)
+
+    @staticmethod
+    def validate_username(value: str) -> None | object:
+        regex = re.compile(r"(^[a-zA-Z]\w{3,50}_{0,2})")
+        return regex.match(value)
+
+    @staticmethod
+    def validate_password(value: str) -> None | object:
+
+        regex = re.compile(r"([\w%]{9,255})")
+        return regex.match(value)
