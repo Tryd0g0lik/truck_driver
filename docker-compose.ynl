@@ -1,17 +1,17 @@
 services:
     backend:
-        container_name: adboard
+        container_name: truck_driver
         build:
           dockerfile: Dockerfile
           context: .
         env_file: ./.env
-        #python3 ./manage.py collectstatic --clear --noinput
         command:
           - bash
           - -c
           - |
             python3 ./manage.py makemigrations
             python3 ./manage.py migrate
+            python3 ./manage.py collectstatic --clear --noinput
             daphne -b 0.0.0.0 -p 8000 project.asgi:application
 
         volumes:
@@ -77,3 +77,4 @@ services:
             - "80:80"
 volumes:
     redis_data:
+    volume_static
