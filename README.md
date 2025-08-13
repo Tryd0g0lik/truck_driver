@@ -12,6 +12,7 @@ Now, user can to registrate.
 Basis db has cache to the Redis:
  - user/person to the 1 redis db. 
 
+----
 
 ## This's working backend's stack
 
@@ -72,6 +73,8 @@ Basis db has cache to the Redis:
 |"`daphne`"|"`Signal`"| "`pytest`"                |
 |||                           |
  
+----
+
 ## Tree
 ```text
 mateImageAI/
@@ -154,8 +157,7 @@ mateImageAI/
 
 
 ```
-
-
+----
 ## Commands
 
 ```
@@ -173,7 +175,7 @@ py manage.py runserver
 - "`migrate`" - creating (or updating) the structures of db;
 - "`runserver`" - Project (it has dependence the redis, channels, celery, option django async and) is based on the "`daphne`" server.   
 
-
+----
 ## Settings.py
 File "`project/settings.py`" have a basis option plus:
 - "`ASGI_APPLICATION`" django cms was switching to the async mode; 
@@ -188,7 +190,7 @@ File "`project/settings.py`" have a basis option plus:
 - "`Logging`" Tah is conf for logs. From root of project we can see the file "`logs.py`". It contains the template for loging; 
 - "`swagger`".
 
-
+----
 ## OpenAPI 
 path: "`swagger/`"\
 path: "`redoc/`"\
@@ -204,10 +206,18 @@ path: "`swagger<format>/`"
 **Example of swagger**\
 ![redoc](./img/swagger.png)
 
+---- 
 ## History of project - GIT
 If you want to see the history of project, run the command - Bash: "` git log --all --oneline --graph --decorate --date=format:'%Y-%m-%d %H:%M:%S' --pretty=format:'%C(yellow)%h%C(auto)%d %C(white)%cd%Creset %s'`"\
 You are will see the nice image\
 ![GIT](./img/git.png)
+
+
+### Git Action
+![GitHUb Action](./img/giit_action.png)
+
+### Linux
+![img.png](img.png)
 
 websocket менеджер может отслеживать когда водитель в пути. При возвращении домой бланк не редактируется.
 

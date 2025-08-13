@@ -1,6 +1,6 @@
 services:
     backend:
-        container_name: adboard
+        container_name: truck_driver
         build:
           dockerfile: Dockerfile
           context: .
