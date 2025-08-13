@@ -7,7 +7,7 @@ from project import celeryconfig
 
 
 # Set the default Django settings module for the 'celery' program.
-# Celery, It's for cash of db.
+# Celery, It's for cache of db.
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.settings")
 
 app = Celery(

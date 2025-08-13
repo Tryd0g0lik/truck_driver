@@ -158,7 +158,7 @@ class UserViews(ViewSet):
                 if len(group_list) > 0:
                     user_new = [view async for view in Users.objects.filter(pk=data.get("id"))]
                     add =user_new[0].groups.add
-
+                    # Below, is my synct_to_async (not from django).
                     await sync_for_async(add, *group_list)
 
                     await user_new[0].asave()
