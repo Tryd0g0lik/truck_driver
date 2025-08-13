@@ -25,11 +25,13 @@ from rest_framework import permissions
 
 from project import settings
 from project.urls_api import urlpatterns as api_urls
+from person.views import main_views
+from person.contribute.controler_activate import user_activate
 
 schema_view = get_schema_view(
     openapi.Info(
         title="DJ Truck Driver API",
-        default_version='v1',
+        default_version="v1",
         description="DJ Drack API",
         contact=openapi.Contact(email="work80@mail.ru"),
     ),
@@ -39,7 +41,8 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    re_path("^person/", include("person.urls", namespace="person")),
+    path("", include("person.urls", namespace="person")),
+    path("activate/<str:sign>/", user_activate, name="user_activate"),
     path("api/", include((api_urls, "api_keys"), namespace="api_keys")),
     path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="swagger"),
     path(
@@ -49,7 +52,6 @@ urlpatterns = [
     ),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="redoc"),
     # Person app routes
-
     # Static and media files
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

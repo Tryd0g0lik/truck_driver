@@ -12,7 +12,11 @@ Now, user can to registrate.
 Basis db has cache to the Redis:
  - user/person to the 1 redis db. 
 
-----
+On the side backend, inside the "`person/views_api/users_views.py::UserViews.create`" - data of user getting an additional validation.\
+
+### Note:
+Receiving data passes by rule: Front doesn't know about the server; Server doesn't know about the Front. 
+
 
 ## This's working backend's stack
 

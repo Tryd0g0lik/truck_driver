@@ -12,19 +12,25 @@
     {% block maincssfiles %}
       <!-- Basic file of style -->
       <link rel="stylesheet" type="text/css" href="{% static 'styles/index.css' %}">
+
     {% endblock maincssfiles %}
     <!-- Below is an additional files -->
-    {% block cssfiles %} {% endblock cssfiles %}
+    {% block mainjsfiles %}
+        {% block cssfiles %} {% endblock cssfiles %}
+      <!--  { % render_bundle 'index' 'js' %}-->
+
+    {% endblock mainjsfiles %}
 
 
     {% block jsfiles %}
-      <!-- We have files with the dynamic's name -->
-      {% for file in js_files %}
-        <script src="{% static '/' %}{{file}}"></script>
-      {% endfor %}
+
+        <!-- We have files with the dynamic's name -->
+        {% for file in js_files %}
+            <script src="{% static '/' %}{{file}}"></script>
+        {% endfor %}
     {% endblock jsfiles %}
 </head>
-<body>
-
-</body>
+<div id="body">
+    <div id="root"></div>
+</div>
 </html>

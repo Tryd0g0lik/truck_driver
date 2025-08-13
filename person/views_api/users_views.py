@@ -1,14 +1,16 @@
 import base64
 import json
+import threading
 import time
 import logging
 import asyncio
 import re
-from datetime import datetime
-from tkinter.scrolledtext import example
+
 from typing import Any
 from collections.abc import Callable
-from django.db import connections
+from kombu.exceptions import OperationalError
+from asgiref.sync import sync_to_async
+from django.db import connections, transaction
 from django.http import JsonResponse, HttpRequest, HttpResponse
 from rest_framework.response import Response
 from rest_framework import serializers, status
@@ -20,9 +22,7 @@ from person.tasks.task_cache_hew_user import task_postman_for_user_id
 from person.models import Users
 from person.hasher import Hasher
 from person.views_api.redis_person import RedisOfPerson
-from person.views_api.serializers import (
-    AsyncUsersSerializer
-)
+from person.views_api.serializers import AsyncUsersSerializer
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
@@ -38,8 +38,10 @@ load_dotenv()
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
 
+
 async def sync_for_async(fn: Callable[[Any], Any], *args, **kwargs):
     return await asyncio.create_task(asyncio.to_thread(fn, *args, **kwargs))
+
 
 def new_connection(data) -> list:
     """
@@ -54,8 +56,14 @@ def new_connection(data) -> list:
                 % (data.get("username"), data.get("email"))
             )
         except Exception as error:
-            log.error("%s: Error => %s" % (__name__ + "::" + new_connection.__name__, error.args[0]))
-            raise ValueError("%s: Error => %s" % (__name__ + "::" + new_connection.__name__, error.args[0]))
+            log.error(
+                "%s: Error => %s"
+                % (__name__ + "::" + new_connection.__name__, error.args[0])
+            )
+            raise ValueError(
+                "%s: Error => %s"
+                % (__name__ + "::" + new_connection.__name__, error.args[0])
+            )
         # POSTGRES_DB
         resp_list = cursor.fetchall()
         users_list = [view for view in resp_list]
@@ -97,9 +105,7 @@ class UserViews(ViewSet):
                 "password": openapi.Schema(
                     example="nH2qGiehvEXjNiYqp3bOVtAYv....", type=openapi.TYPE_STRING
                 ),
-                "category": openapi.Schema(
-                    example="BASE", type=openapi.TYPE_STRING
-                )
+                "category": openapi.Schema(example="BASE", type=openapi.TYPE_STRING),
             },
         ),
         responses={
@@ -123,12 +129,20 @@ class UserViews(ViewSet):
             check_validate.append(self.validate_password(data.get("password")))
             fals_data = [item for item in check_validate if not item]
             if len(fals_data) > 0:
-                log.error("%s: data is not validate" % UserViews.__class__.__name__ + "." + self.create.__name__)
-                raise ValueError("%s: data is not validate" % UserViews.__class__.__name__ + "." + self.create.__name__)
+                log.error(
+                    "%s: data is not validate" % UserViews.__class__.__name__
+                    + "."
+                    + self.create.__name__
+                )
+                raise ValueError(
+                    "%s: data is not validate" % UserViews.__class__.__name__
+                    + "."
+                    + self.create.__name__
+                )
         except (AttributeError, TypeError, Exception) as error:
             return Response(
                 {"data": " Data type is not validate: %s" % error.args},
-                status=status.HTTP_401_UNAUTHORIZED
+                status=status.HTTP_401_UNAUTHORIZED,
             )
         response = Response(status=status.HTTP_401_UNAUTHORIZED)
 
@@ -145,6 +159,8 @@ class UserViews(ViewSet):
             return response
 
         if not user.is_authenticated and len(users_list) == 0:
+            # Open transaction
+
             try:
                 password_hes = self.get_hash_password(data.get("password"))
                 serializer = AsyncUsersSerializer(data=data)
@@ -156,25 +172,33 @@ class UserViews(ViewSet):
                 data: dict = dict(serializer.data).copy()
                 group_list = Group.objects.filter(name=data.get("category"))
                 if len(group_list) > 0:
-                    user_new = [view async for view in Users.objects.filter(pk=data.get("id"))]
-                    add =user_new[0].groups.add
+                    user_new = [
+                        view async for view in Users.objects.filter(pk=data.get("id"))
+                    ]
+                    add = user_new[0].groups.add
                     # Below, is my synct_to_async (not from django).
                     await sync_for_async(add, *group_list)
-
+                    user_new[0].is_active = False
                     await user_new[0].asave()
                 # # RUN THE TASK - Update CACHE's USER -send id to the redis from celer's task
-                task_postman_for_user_id.delay((data.__getitem__("id"),))
-            except Exception as error:
+
+                delay = task_postman_for_user_id.delay
+                t = threading.Thread(target=delay, args=(data.__getitem__("id"),))
+                t.start()
+
+            except (OperationalError, Exception) as error:
                 # RESPONSE WILL BE TO SEND. CODE 500
                 response.data = {"data": error.args}
                 response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                 return response
             # RESPONSE WILL BE TO SEND. CODE 200
             response.data = {"data": "OK"}
+            # Close transaction
             try:
-                if serializer.data.__getitem__("id"):
+                if serializer.data["id"]:
                     user_id_list = [
-                        view async for view in Users.objects.filter(pk=data["id"])
+                        view
+                        async for view in Users.objects.filter(pk=serializer.data["id"])
                     ]
             except Exception as error:
                 return Response(
