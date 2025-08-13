@@ -48,6 +48,7 @@ services:
             retries: 3
         command:
             - redis-server
+            - --bind 0.0.0.0
             - --maxmemory 200mb
             - --protected-mode no
             - --maxmemory-policy allkeys-lru
