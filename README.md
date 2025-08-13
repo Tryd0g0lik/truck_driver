@@ -204,6 +204,11 @@ path: "`swagger<format>/`"
 **Example of swagger**\
 ![redoc](./img/swagger.png)
 
+## History of project - GIT
+If you want to see the history of project, run the command - Bash: "` git log --all --oneline --graph --decorate --date=format:'%Y-%m-%d %H:%M:%S' --pretty=format:'%C(yellow)%h%C(auto)%d %C(white)%cd%Creset %s'`"\
+You are will see the nice image\
+![GIT](./img/git.png)
+
 websocket менеджер может отслеживать когда водитель в пути. При возвращении домой бланк не редактируется.
 
 
