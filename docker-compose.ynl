@@ -77,3 +77,4 @@ services:
             - "80:80"
 volumes:
     redis_data:
+    volume_static
