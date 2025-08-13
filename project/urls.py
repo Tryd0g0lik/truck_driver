@@ -39,7 +39,14 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    re_path("^person/", include("person.urls", namespace="person")),
     path("api/", include((api_urls, "api_keys"), namespace="api_keys")),
+    path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="swagger"),
+    path(
+        "swagger<format>/",
+        schema_view.without_ui(cache_timeout=0),
+        name="swagger-format",
+    ),
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="redoc"),
     # Person app routes
 

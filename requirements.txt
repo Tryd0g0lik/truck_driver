@@ -6,7 +6,6 @@ djangorestframework-simplejwt[crypto]>=5.5.0
 psycopg2-binary>=2.9.10
 asyncio==3.4.3
 django-cors-headers==4.6.0
-psycopg2>=2.9.10 # psycopg2-binary
 postgres>=4.0
 django-bootstrap4>=25.1
 Django==4.2.20

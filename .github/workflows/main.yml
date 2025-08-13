@@ -1,0 +1,37 @@
+name: Django_pages
+
+on:
+  push:
+    branches: ['cicd']
+
+jobs:
+  deploy_truckdriver:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.12' ]
+    steps:
+      # cache remove
+      - name: Clear GitHub Actions cache
+        run: rm -rf $HOME/.cache/actions
+
+  cicd_deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.12' ]
+    env:
+      DEPLOY_HOST: ${{ secrets.SSH_HOST }}
+      DEPLOY_USER: ${{ secrets.SSH_USER }}
+      DEPLOY_KEY: ${{ secrets.SSH_KEY }}
+      DEPLOY_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+    needs: deploy_truckdriver
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          script: |
+            expect /home/denis/adboard/pull.exp

@@ -1,7 +1,7 @@
 repos:
   # https://pre-commit.com/#config-exclude
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0  # Укажите последнюю версию
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
         files: \.py$
@@ -20,7 +20,7 @@ repos:
 
   - repo: https://github.com/psf/black
     # https://black.readthedocs.io/en/stable/
-    rev: 24.8.0  # Укажите последнюю версию
+    rev: 24.8.0
     hooks:
       - id: black
         files: \.py$
@@ -35,23 +35,3 @@ repos:
           - id: bandit
             args: [ "-c", "pyproject.toml" ]
             additional_dependencies: [ "bandit[toml]" ]
-
-#  - repo: https://github.com/pylint-dev/pylint
-#    # https://pylint.readthedocs.io/en/latest/user_guide/messages/warning/f-string-without-interpolation.html
-#    rev: v3.3.7
-#    hooks:
-#      - id: pylint
-#        name: pylint
-#        entry: pylint
-#        language: system
-#        types: [python]
-#        require_serial: true
-
-#  - repo: https://github.com/PyCQA/isort
-#    # https://pycqa.github.io/isort/docs/configuration/pre-commit.html
-#    rev: 5.13.2
-#    hooks:
-#      - id: isort
-#        files: \.py$
-##        language_version: "3.12"
-#        name: isort (python)
