@@ -219,6 +219,13 @@ You are will see the nice image\
 ### Linux
 ![img.png](img.png)
 
+**FIles of '*.exp' and '*.sh'**\
+!['*.exp' and '*.sh'](./img/linux_pull.png)
+
+**Linux docker daphna nginx postgres**\
+![linux_docker](./img/linux_docker.png)
+
+
 websocket менеджер может отслеживать когда водитель в пути. При возвращении домой бланк не редактируется.
 
 
