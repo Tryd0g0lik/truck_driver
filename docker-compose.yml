@@ -43,11 +43,11 @@ services:
             interval: 30s
             timeout: 10s
             retries: 3
+#        - --protected-mode no
         command:
             - redis-server
             - --bind 0.0.0.0
             - --maxmemory 200mb
-            - --protected-mode no
             - --maxmemory-policy allkeys-lru
             - --save ""
         volumes:

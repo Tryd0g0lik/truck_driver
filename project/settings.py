@@ -98,7 +98,7 @@ ASGI_APPLICATION = "project.asgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
+print("POSTGRES_HOST =>", POSTGRES_HOST)
 DATABASES = {
     # "default": {
     #     'ENGINE': f'{DATABASE_ENGINE_LOCAL}',
@@ -109,7 +109,7 @@ DATABASES = {
         'NAME': f'{POSTGRES_DB}',
         'USER': f'{POSTGRES_USER}',
         'PASSWORD': POSTGRES_PASSWORD,
-        'HOST': f'{POSTGRES_HOST_DOCKER}',
+        'HOST': f'{POSTGRES_HOST}',
         'PORT': f'{POSTGRES_PORT}',
         "KEY_PREFIX": "drive_", # it's my prefix for the keys
     }
