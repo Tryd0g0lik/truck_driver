@@ -1,27 +1,4 @@
 services:
-    backend:
-        container_name: truck_driver
-        build:
-          dockerfile: Dockerfile
-          context: .
-        env_file: ./.env
-        command:
-          - bash
-          - -c
-          - |
-            python3 ./manage.py makemigrations
-            python3 ./manage.py migrate
-            python3 ./manage.py collectstatic --clear --noinput
-            daphne -b 0.0.0.0 -p 8000 project.asgi:application
-
-        volumes:
-           - volume_static:/www/src/collectstatic
-        depends_on:
-          - db
-          - redis
-        ports:
-          - "8000:8000"
-
     db:
         container_name: postgres_truckdriver
         image: postgres
@@ -32,12 +9,36 @@ services:
             - POSTGRES_DB=${POSTGRES_DB}
         restart: unless-stopped
         healthcheck:
-            test: ['CMD-SHELL', '${POSTGRES_DB} -U ${POSTGRES_USER}']
+            test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
             interval: 5s
             timeout: 5s
             retries: 5
         ports:
             - "5433:5432"
+    backend:
+        container_name: truck_driver
+        build:
+          dockerfile: Dockerfile
+          context: .
+        env_file: ./.env
+        command:
+          - bash
+          - -c
+          - |
+            while ! nc -z db 5432; do
+              echo "Waiting for PostgreSQL..."
+              sleep 2
+            done
+            python3 ./manage.py migrate
+            python3 ./manage.py collectstatic --clear --noinput
+            daphne -b 0.0.0.0 -p 8000 project.asgi:application
+
+        volumes:
+           - volume_static:/www/src/collectstatic
+        depends_on:
+          - db
+        ports:
+          - "8000:8000"
     redis:
         container_name: redis_truckdriver
         image: redis:7.2-alpine
