@@ -13,10 +13,12 @@ import os
 from pathlib import Path
 from datetime import timedelta, datetime
 from dotenv_ import (DB_ENGINE, POSTGRES_DB, POSTGRES_HOST, POSTGRES_PASSWORD, POSTGRES_PORT, POSTGRES_USER,
+                        POSTGRES_HOST_DOCKER,
                      SECRET_KEY_DJ, SMTP_USER, SMTP_PASS,
                      SMTP_HOST, SMTP_PORT,
                      REDIS_LOCATION_URL, DATABASE_LOCAL, DATABASE_ENGINE_LOCAL,
-                     DATABASE_ENGINE_REMOTE, APP_TIME_ZONE, JWT_ACCESS_TOKEN_LIFETIME_MINUTES, JWT_REFRESH_TOKEN_LIFETIME_DAYS, DB_TO_RADIS_HOST, DB_TO_RADIS_PORT)
+                     DATABASE_ENGINE_REMOTE, APP_TIME_ZONE, JWT_ACCESS_TOKEN_LIFETIME_MINUTES, JWT_REFRESH_TOKEN_LIFETIME_DAYS,
+                     DB_TO_RADIS_HOST, DB_TO_RADIS_PORT)
 import time
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -107,7 +109,7 @@ DATABASES = {
         'NAME': f'{POSTGRES_DB}',
         'USER': f'{POSTGRES_USER}',
         'PASSWORD': POSTGRES_PASSWORD,
-        'HOST': f'{POSTGRES_HOST}',
+        'HOST': f'{POSTGRES_HOST_DOCKER}',
         'PORT': f'{POSTGRES_PORT}',
         "KEY_PREFIX": "drive_", # it's my prefix for the keys
     }
