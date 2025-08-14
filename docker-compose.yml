@@ -70,7 +70,7 @@ services:
             context: ./nginx
             dockerfile: Dockerfile
         depends_on:
-            - www
+            - backend
         volumes:
             - volume_static:/www/src/collectstatic
         restart: on-failure
