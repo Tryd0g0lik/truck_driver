@@ -1,7 +1,3 @@
-"""
-person/hasher.py
-"""
-
 from django.contrib.auth.hashers import (
     make_password,
     PBKDF2PasswordHasher,

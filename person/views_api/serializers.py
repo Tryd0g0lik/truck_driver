@@ -1,7 +1,3 @@
-"""
-person/views_api/serializers.py
-"""
-
 # REGISTRATION
 from person.models import Users
 from rest_framework import serializers

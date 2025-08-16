@@ -7,7 +7,7 @@ from celery.utils.log import get_task_logger
 
 from redis import Redis, TimeoutError
 
-from dotenv_ import DB_TO_RADIS_CACHE_USERS, DB_TO_RADIS_HOST
+from dotenv_ import DB_TO_RADIS_CACHE_USERS, DB_TO_RADIS_PORT, DB_TO_RADIS_HOST
 from logs import configure_logging
 from person.interfaces import TypeUser
 from person.models import Users
@@ -39,8 +39,6 @@ def task_postman_for_user_id(self, user_id_list: list[int]) -> Union[TypeUser, d
     :param user_id_list: Index from new user, we receive in list format.
     :return:
     """
-    print("START REDIS AFTER CELERY: %s" % __name__)
-
     if len(user_id_list) == 0:
         log.error(ValueError("[%s]: No users found" % __name__))
         return {}
@@ -59,7 +57,7 @@ def person_to_redis(user_id_list: list[int]) -> Union[TypeUser, dict]:
     client = Redis(
         host=f"{DB_TO_RADIS_HOST}",
         port=6380,
-        db=int(DB_TO_RADIS_CACHE_USERS),
+        db=DB_TO_RADIS_CACHE_USERS,
     )
 
     try:

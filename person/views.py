@@ -1,7 +1,3 @@
-"""
-person/views.py
-"""
-
 import os
 
 from django.shortcuts import render
@@ -15,6 +11,7 @@ def main_views(request: type(HttpResponse)) -> type(render):
     :param request:
     :return:
     """
+    files = []
     # GET JS FILES FOR LOGIN AND REGISTER PAGES
     # if "login" in request.path.lower() or "register" in request.path.lower():
     files = os.listdir(f"{BASE_DIR}/collectstatic/scripts")

@@ -1,21 +1,19 @@
-"""
-person/views_api/users_views.py
-"""
-
+import base64
+import json
+import time
 import logging
 import asyncio
 import re
-
+from datetime import datetime
+from tkinter.scrolledtext import example
 from typing import Any
 from collections.abc import Callable
-from kombu.exceptions import OperationalError
-
 from django.db import connections
-from django.http import HttpRequest
+from django.http import JsonResponse, HttpRequest, HttpResponse
 from rest_framework.response import Response
 from rest_framework import serializers, status
 from adrf.viewsets import ViewSet
-
+from unicodedata import category
 from django.contrib.auth.models import Group
 from person.apps import signal_user_registered
 from person.tasks.task_cache_hew_user import task_postman_for_user_id
@@ -26,6 +24,9 @@ from person.views_api.serializers import AsyncUsersSerializer
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
+
+from project.settings import SIMPLE_JWT
+from person.binaries import Binary
 from dotenv_ import SECRET_KEY_DJ
 
 from logs import configure_logging
@@ -64,7 +65,7 @@ def new_connection(data) -> list:
         # POSTGRES_DB
         resp_list = cursor.fetchall()
         users_list = [view for view in resp_list]
-        return users_list
+    return users_list
 
 
 async def iterator_get_person_cache(client: type(RedisOfPerson)):
@@ -156,7 +157,6 @@ class UserViews(ViewSet):
             return response
 
         if not user.is_authenticated and len(users_list) == 0:
-            # Open transaction
             try:
                 password_hes = self.get_hash_password(data.get("password"))
                 serializer = AsyncUsersSerializer(data=data)
@@ -166,12 +166,7 @@ class UserViews(ViewSet):
                 await serializer.asave()
 
                 data: dict = dict(serializer.data).copy()
-                group_list = [
-                    view
-                    async for view in Group.objects.filter(
-                        name=serializer.data.get("category")
-                    )
-                ]
+                group_list = Group.objects.filter(name=data.get("category"))
                 if len(group_list) > 0:
                     user_new = [
                         view async for view in Users.objects.filter(pk=data.get("id"))
@@ -179,29 +174,21 @@ class UserViews(ViewSet):
                     add = user_new[0].groups.add
                     # Below, is my synct_to_async (not from django).
                     await sync_for_async(add, *group_list)
-                    user_new[0].is_active = False
+
                     await user_new[0].asave()
                 # # RUN THE TASK - Update CACHE's USER -send id to the redis from celer's task
-
-                res = task_postman_for_user_id.delay((data.__getitem__("id"),))
-                print(res.status)
-                # (threading.Thread(
-                #     target=delay, args=(data.__getitem__("id"),), daemon=True
-                # )).start()
-
-            except (OperationalError, Exception) as error:
+                task_postman_for_user_id.delay((data.__getitem__("id"),))
+            except Exception as error:
                 # RESPONSE WILL BE TO SEND. CODE 500
                 response.data = {"data": error.args}
                 response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                 return response
             # RESPONSE WILL BE TO SEND. CODE 200
             response.data = {"data": "OK"}
-            # Close transaction
             try:
-                if serializer.data["id"]:
+                if serializer.data.__getitem__("id"):
                     user_id_list = [
-                        view
-                        async for view in Users.objects.filter(pk=serializer.data["id"])
+                        view async for view in Users.objects.filter(pk=data["id"])
                     ]
             except Exception as error:
                 return Response(

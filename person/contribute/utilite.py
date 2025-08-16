@@ -13,6 +13,11 @@ signer = Signer()
 
 def send_activation_notificcation(user) -> bool:
     """
+    TODO: This function send (after the Signal) a message by email of user.\
+     This is the part \
+     authentication of the user.
+     Note: Look up the 'user_registered_dispatcher' from 'apps.py'.
+
     :param user: object
     """
 

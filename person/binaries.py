@@ -1,7 +1,3 @@
-"""
-person/binaries.py
-"""
-
 import base64
 import pickle
 

@@ -8,30 +8,23 @@
     <title>Title</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Edu+NSW+ACT+Cursive:wght@400..700&display=swap" rel="stylesheet">
     <title>{% block title %}{{title}}{% endblock title %} - Page</title>
     {% block maincssfiles %}
       <!-- Basic file of style -->
       <link rel="stylesheet" type="text/css" href="{% static 'styles/index.css' %}">
-
     {% endblock maincssfiles %}
     <!-- Below is an additional files -->
-    {% block mainjsfiles %}
-        {% block cssfiles %} {% endblock cssfiles %}
-      <!--  { % render_bundle 'index' 'js' %}-->
-
-    {% endblock mainjsfiles %}
+    {% block cssfiles %} {% endblock cssfiles %}
 
 
     {% block jsfiles %}
-
-        <!-- We have files with the dynamic's name -->
-        {% for file in js_files %}
-            <script src="{% static '/' %}{{file}}"></script>
-        {% endfor %}
+      <!-- We have files with the dynamic's name -->
+      {% for file in js_files %}
+        <script src="{% static '/' %}{{file}}"></script>
+      {% endfor %}
     {% endblock jsfiles %}
 </head>
-<div id="body">
-    <div id="root"></div>
-</div>
+<body>
+
+</body>
 </html>

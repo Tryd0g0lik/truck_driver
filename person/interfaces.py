@@ -1,8 +1,4 @@
-"""
-person/interfaces.py
-"""
-
-from typing import TypedDict, NotRequired
+from typing import TypeVar, Sequence, List, TypedDict, NotRequired
 
 from person.models import Users
 
