@@ -17,6 +17,12 @@ Now, user can to registrate.
 DB (basis)  has a cache to the Redis:
  - user/person to the 1 redis db. 
 
+**Celery**\
+![celery](./img/celery.png)
+
+**Redic-cli**\
+![redis-cli](./img/redis_cli.png)
+
 On the side backend, inside the "`person/views_api/users_views.py::UserViews.create`" - data of user getting an additional validation.\
 
 ### Note:
@@ -128,7 +134,7 @@ API__POST_REGISTERATION=/api/auth/register/
 |async "`Django`"|async "`DRF`"| "`JWT`" от "`DRF`"        |
 |"`Celery`"|"`Radis`"| "`PostgreSQL` or "`ASQLite`" |
 |"`daphne`"|"`Signal`"| "`pytest`"                |
-|||                           |
+|[swagger](./swagger)|[nginx](./nginx/default.conf)|[docker-compose](./docker-compose.yml)   |
  
 ----
 
@@ -303,5 +309,15 @@ You are will see the nice image\
 
 **Linux docker daphna nginx postgres**\
 ![linux_docker](./img/linux_docker.png)
+
+## And More
+
+For 16 hours for me didn't have time did UI for the google-map (by link 'Raport') and Authorization.\
+![google_maps](./img/google_maps.png)
+
+Now, you can  create a new user, only and his will be record to the cache, auto.
+
+If what, i'm reade to continue working. Thanks.  
+
 
 

@@ -1,3 +1,7 @@
+"""
+person/binaries.py
+"""
+
 import base64
 import pickle
 
@@ -5,7 +9,7 @@ import pickle
 class Binary:
 
     def str_to_binary(self, string) -> bytes:
-        """create rows of binary data """
+        """create rows of binary data"""
         try:
             encoded_string = base64.b64encode(
                 string.encode("utf-8")

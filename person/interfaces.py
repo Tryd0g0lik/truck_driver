@@ -1,4 +1,8 @@
-from typing import TypeVar, Sequence, List, TypedDict, NotRequired
+"""
+person/interfaces.py
+"""
+
+from typing import TypedDict, NotRequired
 
 from person.models import Users
 
@@ -38,5 +42,3 @@ class TypeUser(InitialUser):
     first_name: str
     last_name: str | None
     verification_code: bool
-
-

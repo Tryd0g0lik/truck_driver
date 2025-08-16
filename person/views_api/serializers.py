@@ -1,7 +1,12 @@
+"""
+person/views_api/serializers.py
+"""
+
 # REGISTRATION
 from person.models import Users
 from rest_framework import serializers
 from adrf.serializers import ModelSerializer
+
 
 class AsyncUsersSerializer(ModelSerializer):
     """
@@ -22,4 +27,3 @@ class CacheUsersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = "__all__"
-

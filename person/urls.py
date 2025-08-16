@@ -1,3 +1,7 @@
+"""
+person/urls.py
+"""
+
 from django.urls import path
 from person.views import main_views
 from person.contribute.controler_activate import user_activate

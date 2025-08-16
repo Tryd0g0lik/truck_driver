@@ -1,13 +1,14 @@
+"""
+person/tasks/task_user_is_authenticate.py
+"""
+
 import asyncio
-import json
 import logging
 from datetime import datetime
 from json import JSONDecodeError
 
 from redis.asyncio.client import Redis
-from redis.exceptions import ConnectionError, BusyLoadingError
-from redis.backoff import ExponentialBackoff
-from redis.retry import Retry
+from redis.exceptions import ConnectionError
 from celery import shared_task
 
 from logs import configure_logging

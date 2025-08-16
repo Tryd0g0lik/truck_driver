@@ -1,7 +1,7 @@
-import base64
-import json
-import threading
-import time
+"""
+person/views_api/users_views.py
+"""
+
 import logging
 import asyncio
 import re
@@ -9,13 +9,13 @@ import re
 from typing import Any
 from collections.abc import Callable
 from kombu.exceptions import OperationalError
-from asgiref.sync import sync_to_async
-from django.db import connections, transaction
-from django.http import JsonResponse, HttpRequest, HttpResponse
+
+from django.db import connections
+from django.http import HttpRequest
 from rest_framework.response import Response
 from rest_framework import serializers, status
 from adrf.viewsets import ViewSet
-from unicodedata import category
+
 from django.contrib.auth.models import Group
 from person.apps import signal_user_registered
 from person.tasks.task_cache_hew_user import task_postman_for_user_id
@@ -26,9 +26,6 @@ from person.views_api.serializers import AsyncUsersSerializer
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
-
-from project.settings import SIMPLE_JWT
-from person.binaries import Binary
 from dotenv_ import SECRET_KEY_DJ
 
 from logs import configure_logging
@@ -186,13 +183,11 @@ class UserViews(ViewSet):
                     await user_new[0].asave()
                 # # RUN THE TASK - Update CACHE's USER -send id to the redis from celer's task
 
-                task_postman_for_user_id.delay(
-                    data.__getitem__("id"),
-                )
-                # t = threading.Thread(
+                res = task_postman_for_user_id.delay((data.__getitem__("id"),))
+                print(res.status)
+                # (threading.Thread(
                 #     target=delay, args=(data.__getitem__("id"),), daemon=True
-                # )
-                # t.start()
+                # )).start()
 
             except (OperationalError, Exception) as error:
                 # RESPONSE WILL BE TO SEND. CODE 500
