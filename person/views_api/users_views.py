@@ -160,7 +160,6 @@ class UserViews(ViewSet):
 
         if not user.is_authenticated and len(users_list) == 0:
             # Open transaction
-
             try:
                 password_hes = self.get_hash_password(data.get("password"))
                 serializer = AsyncUsersSerializer(data=data)
@@ -170,7 +169,12 @@ class UserViews(ViewSet):
                 await serializer.asave()
 
                 data: dict = dict(serializer.data).copy()
-                group_list = Group.objects.filter(name=data.get("category"))
+                group_list = [
+                    view
+                    async for view in Group.objects.filter(
+                        name=serializer.data.get("category")
+                    )
+                ]
                 if len(group_list) > 0:
                     user_new = [
                         view async for view in Users.objects.filter(pk=data.get("id"))
