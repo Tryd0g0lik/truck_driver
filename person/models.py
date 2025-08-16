@@ -1,14 +1,21 @@
+"""
+person/models.py
+"""
+
 from django.core.validators import MinLengthValidator, MinValueValidator
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
+
 CATEGORY_STATUS = [
-    ("BASE", _("Employee")), # Any employee which has the access only reading
-    ("DRIVER", _("Truck driver")), # Truck driver
-    ("MANAGER", _("Manager")), # Manager of logic service
-    ("CLIENT", _("Client")), # Client of company
-    ("ADMIN", _("Supervisor")), # Admin of services
+    ("BASE", _("Employee")),  # Any employee which has the access only reading
+    ("DRIVER", _("Truck driver")),  # Truck driver
+    ("MANAGER", _("Manager")),  # Manager of logic service
+    ("CLIENT", _("Client")),  # Client of company
+    ("ADMIN", _("Supervisor")),  # Admin of services
 ]
+
+
 class Users(AbstractUser):
 
     category = models.CharField(default="BASE", choices=CATEGORY_STATUS, max_length=50)
@@ -45,5 +52,7 @@ to user's email. User indicates his email at the registrations moment."
 
     class Meta(AbstractUser.Meta):
         db_table = "person"
-        ordering = ["-id", ]
+        ordering = [
+            "-id",
+        ]
         indexes = [models.Index(fields=["is_active"])]

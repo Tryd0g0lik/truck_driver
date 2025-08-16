@@ -19,3 +19,6 @@ django-redis>=6.0.0
 celery[redis]>=5.5.3
 bcrypt>=4.3.0
 redis-cli>=1.0.1
+drf-spectacular==0.28.0
+drf-yasg<=1.21.10
+daphne>=4.0.0
