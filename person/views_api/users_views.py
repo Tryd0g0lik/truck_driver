@@ -67,7 +67,7 @@ def new_connection(data) -> list:
         # POSTGRES_DB
         resp_list = cursor.fetchall()
         users_list = [view for view in resp_list]
-    return users_list
+        return users_list
 
 
 async def iterator_get_person_cache(client: type(RedisOfPerson)):

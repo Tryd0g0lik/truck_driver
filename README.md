@@ -1,5 +1,8 @@
 [Front](https://github.com/Tryd0g0lik/truck_driver_front)
 
+My [work on the HTTP](http://83.166.245.209/). If you want? i can relocate files to the "`Vercel.app`".
+
+# TruckDriver
 Now, user can to registrate.
 ```text
 {
@@ -9,9 +12,9 @@ Now, user can to registrate.
     category: "BASE"
 }
 ```
-- "`category`" Single line from total list, it user must choose/select. Total list from category: "`BASE`", "`DRIVER`", "`MANAGER`", "~". It's roles for user. Everyone role contain the list permissions.
+- "`category`" Single line from total list, it user must choose/select. Total list from category: "`BASE`", "`DRIVER`", "`MANAGER`", "`CLIENT`", "`ADMIN`". It's roles for using the service. Everyone role contain the list permissions and rules.
 
-Basis db has cache to the Redis:
+DB (basis)  has a cache to the Redis:
  - user/person to the 1 redis db. 
 
 On the side backend, inside the "`person/views_api/users_views.py::UserViews.create`" - data of user getting an additional validation.\
@@ -226,8 +229,8 @@ py manage.py runserver
 "`py manage.py collectstatic --clear --noinput`" If was changed the static files, it means before the start of works, run the command for an assembly a static's file.
 *"`--clear`"* - removed the old static's files. *"`--noinput`"* - for you are not needed write a comment. \
 
-- "`makemigrations`" if you need update collection;
-- "`migrate`" - creating (or updating) the structures of db;
+- "`makemigrations`" if you need update collection migrations after changing the model of db;
+- "`migrate`" - creating/apply (or updating the structures) db by new migration's files for db;
 - "`runserver`" - Project (it has dependence the redis, channels, celery, option django async and) is based on the "`daphne`" server.   
 
 ----
