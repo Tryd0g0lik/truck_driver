@@ -37,9 +37,10 @@ if DEBUG:  # Note: Only, develop mode
     SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 ALLOWED_HOSTS = [
+f"{DB_TO_RADIS_HOST}",
 '127.0.0.1',
     '0.0.0.0',
-    f"{DB_TO_RADIS_HOST}",
+
 
 
 ]
