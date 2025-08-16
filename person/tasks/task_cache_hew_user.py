@@ -57,7 +57,7 @@ def person_to_redis(user_id_list: list[int]) -> Union[TypeUser, dict]:
     client = Redis(
         host=f"{DB_TO_RADIS_HOST}",
         port=6380,
-        db=DB_TO_RADIS_CACHE_USERS,
+        db=int(DB_TO_RADIS_CACHE_USERS),
     )
 
     try:

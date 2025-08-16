@@ -187,7 +187,9 @@ class UserViews(ViewSet):
                 # # RUN THE TASK - Update CACHE's USER -send id to the redis from celer's task
 
                 delay = task_postman_for_user_id.delay
-                t = threading.Thread(target=delay, args=(data.__getitem__("id"),))
+                t = threading.Thread(
+                    target=delay, args=(data.__getitem__("id"),), daemon=True
+                )
                 t.start()
 
             except (OperationalError, Exception) as error:
