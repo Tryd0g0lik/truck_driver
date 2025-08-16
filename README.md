@@ -253,7 +253,9 @@ File "`project/settings.py`" have a basis option plus:
 **Email** [message can see](./person/contribute) in development mode.
 
 Change the var: "`project.settings.EMAIL_BACKEND`" at "`django.core.mail.backends.smtp.EmailBackend`" \
-Now, email's message we can see only inside of console. 
+Now, email's message we can see only inside of console or truck_driver doker's logs. 
+
+![docker_logs_truck_driver](./img/docker_logs_truck_driver.png)
 
 
 ----
@@ -301,3 +303,5 @@ You are will see the nice image\
 
 **Linux docker daphna nginx postgres**\
 ![linux_docker](./img/linux_docker.png)
+
+

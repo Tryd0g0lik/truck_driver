@@ -186,11 +186,13 @@ class UserViews(ViewSet):
                     await user_new[0].asave()
                 # # RUN THE TASK - Update CACHE's USER -send id to the redis from celer's task
 
-                delay = task_postman_for_user_id.delay
-                t = threading.Thread(
-                    target=delay, args=(data.__getitem__("id"),), daemon=True
+                task_postman_for_user_id.delay(
+                    data.__getitem__("id"),
                 )
-                t.start()
+                # t = threading.Thread(
+                #     target=delay, args=(data.__getitem__("id"),), daemon=True
+                # )
+                # t.start()
 
             except (OperationalError, Exception) as error:
                 # RESPONSE WILL BE TO SEND. CODE 500
