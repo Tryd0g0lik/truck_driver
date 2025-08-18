@@ -3,6 +3,7 @@ from person.models import Users
 from rest_framework import serializers
 from adrf.serializers import ModelSerializer
 
+
 class AsyncUsersSerializer(ModelSerializer):
     """
     This is the basis serialize of 'person/views_api/users_views.py::UserViews'
@@ -22,4 +23,3 @@ class CacheUsersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Users
         fields = "__all__"
-

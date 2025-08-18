@@ -38,5 +38,3 @@ class TypeUser(InitialUser):
     first_name: str
     last_name: str | None
     verification_code: bool
-
-

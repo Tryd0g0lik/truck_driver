@@ -1,3 +1,8 @@
+[Front](https://github.com/Tryd0g0lik/truck_driver_front)
+
+My [work on the HTTP](http://83.166.245.209/). If you want? i can relocate files to the "`Vercel.app`".
+
+# TruckDriver
 Now, user can to registrate.
 ```text
 {
@@ -7,17 +12,21 @@ Now, user can to registrate.
     category: "BASE"
 }
 ```
-- "`category`" Single line from total list, it user must choose/select. Total list from category: "`BASE`", "`DRIVER`", "`MANAGER`", "~". It's roles for user. Everyone role contain the list permissions.
+- "`category`" Single line from total list, it user must choose/select. Total list from category: "`BASE`", "`DRIVER`", "`MANAGER`", "`CLIENT`", "`ADMIN`". It's roles for using the service. Everyone role contain the list permissions and rules.
 
-Basis db has cache to the Redis:
+DB (basis)  has a cache to the Redis:
  - user/person to the 1 redis db. 
+
+**Celery**\
+![celery](./img/celery.png)
+
+**Redic-cli**\
+![redis-cli](./img/redis_cli.png)
 
 On the side backend, inside the "`person/views_api/users_views.py::UserViews.create`" - data of user getting an additional validation.\
 
 ### Note:
 Receiving data passes by rule: Front doesn't know about the server; Server doesn't know about the Front. 
-
-----
 
 ## This's working backend's stack
 
@@ -71,12 +80,60 @@ Receiving data passes by rule: Front doesn't know about the server; Server doesn
 ```
 </details>
 
+<details close>
+<summary>.ENV file</summary>
+
+```
+SECRET_KEY_DJ=<django_secret_key>
+DJANGO_SETTINGS_MODULE=project.settings
+POSTGRES_DB=<db_name>
+# person
+POSTGRES_USER=postgres
+POSTGRES_HOST=127.0.0.1
+
+POSTGRES_PORT=5433
+POSTGRES_PASSWORD=< password_from_basic_db >
+DB_ENGINE=django.db.backends.postgresql
+APP_PROTOCOL=http
+APP_HOST=127.0.0.1
+APP_PORT=8000
+APP_TIME_ZONE=Asia/Krasnoyarsk
+
+JWT_ACCESS_TOKEN_LIFETIME_MINUTES=5
+JWT_REFFRESH_TOKEN_LIFETIME_DAYS=10
+
+# Email Service
+SMTP_HOST=smtp.yandex.ru
+SMTP_USER=your_own_email@google.ru
+SMTP_PORT=465
+SMTP_PASS=<sercret_key_of_email_service> 
+
+URL_REDIRECT_IF_NOTGET_AUTHENTICATION = /
+URL_REDIRECT_IF_GET_AUTHENTICATION = /
+# Database Configuration Redis
+REDIS_LOCATION_URL=rediss://<host_of_redis_db>:6380/1
+
+DB_TO_RADIS_PORT=6380
+DB_TO_RADIS_HOST=<host_of_redis>
+DB_TO_RADIS_CACHE_USERS=1
+
+# db
+DATABASE_ENGINE_REMOTE=django.core.cache.backends.redis.RedisCache
+DATABASE_ENGINE_LOCAL=django.db.backends.sqlite3
+DATABASE_LOCAL=truckdriver_db.sqlite3
+
+#APi
+API__POST_REGISTERATION=/api/auth/register/
+```
+
+</details>
+
 |||                           |
 |:----|:----|:--------------------------|
 |async "`Django`"|async "`DRF`"| "`JWT`" от "`DRF`"        |
 |"`Celery`"|"`Radis`"| "`PostgreSQL` or "`ASQLite`" |
 |"`daphne`"|"`Signal`"| "`pytest`"                |
-|||                           |
+|[swagger](./swagger)|[nginx](./nginx/default.conf)|[docker-compose](./docker-compose.yml)   |
  
 ----
 
@@ -84,6 +141,8 @@ Receiving data passes by rule: Front doesn't know about the server; Server doesn
 ```text
 mateImageAI/
 ├── backend/
+│   ├── .github
+│   |   └──workflows/*
 │   ├── .gitignore
 │   ├── manage.py
 │   ├── requirements.txt
@@ -130,7 +189,6 @@ mateImageAI/
 │   ├   ├── pre-commit
 |   |
 │   ├── src
-│   ├   ├── api/
 │   ├   ├── components/
 │   ├   ├── map/
 |   |   |   ├── another-module.ts
@@ -176,8 +234,8 @@ py manage.py runserver
 "`py manage.py collectstatic --clear --noinput`" If was changed the static files, it means before the start of works, run the command for an assembly a static's file.
 *"`--clear`"* - removed the old static's files. *"`--noinput`"* - for you are not needed write a comment. \
 
-- "`makemigrations`" if you need update collection;
-- "`migrate`" - creating (or updating) the structures of db;
+- "`makemigrations`" if you need update collection migrations after changing the model of db;
+- "`migrate`" - creating/apply (or updating the structures) db by new migration's files for db;
 - "`runserver`" - Project (it has dependence the redis, channels, celery, option django async and) is based on the "`daphne`" server.   
 
 ----
@@ -195,15 +253,22 @@ File "`project/settings.py`" have a basis option plus:
 - "`Logging`" Tah is conf for logs. From root of project we can see the file "`logs.py`". It contains the template for loging; 
 - "`swagger`".
 
+### Note
+
+**Email** [message can see](./person/contribute) in development mode.
+
+Change the var: "`project.settings.EMAIL_BACKEND`" at "`django.core.mail.backends.smtp.EmailBackend`" \
+Now, email's message we can see only inside of console or truck_driver doker's logs. 
+
+![docker_logs_truck_driver](./img/docker_logs_truck_driver.png)
+
+
 ----
-## OpenAPI 
-path: "`swagger/`"\
-path: "`redoc/`"\
-path: "`swagger<format>/`"
+## OpenAPI
+- '`POST`' "`{{url_basis}}/api/auth/person/`" - User registration.\
+For filling out the blank/form, for us need the Truck Driver. Above, API for registration. And, no more. :-( I didn't make it for 16 hours.\
+But, we have and [Fron path](https://github.com/Tryd0g0lik/truck_driver_front).
 
-- '`POST`' "`{{url_basis}}/api/auth/person/`" - User registration.
-
-для работы с бланком нужен водитель. Нужна регистрация пользователей.
 ### Swagger
 **Example of redoc**\
 ![redoc](./img/redoc.png)
@@ -211,7 +276,22 @@ path: "`swagger<format>/`"
 **Example of swagger**\
 ![redoc](./img/swagger.png)
 
----- 
+#### Note
+The root of project contain the 'swagger' file.
+
+----
+
+## Local URL
+* "`register/`" page for registration;
+* "`login/`" page for authorisation;
+* "`raport/`" page contain the map and form for report.
+* "`swagger/`"
+* "`redoc/`"
+* "`swagger<format>/`"
+
+### Note
+* If you are wish, i can use the test. Pytest, and basic script for test api from Postman.
+
 ## History of project - GIT
 If you want to see the history of project, run the command - Bash: "` git log --all --oneline --graph --decorate --date=format:'%Y-%m-%d %H:%M:%S' --pretty=format:'%C(yellow)%h%C(auto)%d %C(white)%cd%Creset %s'`"\
 You are will see the nice image\
@@ -222,7 +302,9 @@ You are will see the nice image\
 ![GitHUb Action](./img/giit_action.png)
 
 ### Linux
+
 ![img.png](img.png)
+
 
 **FIles of '*.exp' and '*.sh'**\
 !['*.exp' and '*.sh'](./img/linux_pull.png)
@@ -231,13 +313,15 @@ You are will see the nice image\
 ![linux_docker](./img/linux_docker.png)
 
 
-websocket менеджер может отслеживать когда водитель в пути. При возвращении домой бланк не редактируется.
+## And More
+
+For 16 hours for me didn't have time did UI for the google-map (by link 'Raport') and Authorization.\
+![google_maps](./img/google_maps.png)
+
+Now, you can  create a new user, only and his will be record to the cache, auto.
+
+If what, i'm reade to continue working. Thanks.  
 
 
-CATEGORY_STATUS  - Каждый из перечисленных эелементов должен иметь список своих ограничений. 
-Например BASE только чтение. 
 
-DRIVER чтение, заполнение и редактирование бланка для водителя грузовика. Но запрещено редактирование телефона и имени.
 
-MANAGER чтение, для водителя грузовика
-ADMIN буквально все права доступны кроме изменений личных данных (имя, телефон, почта) зарегистрированных пользователей.

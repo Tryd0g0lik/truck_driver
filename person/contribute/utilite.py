@@ -1,6 +1,7 @@
 """
 person/contribute/utilite.py
 """
+
 from django.core.signing import Signer
 from dotenv_ import APP_PROTOCOL, APP_HOST, APP_PORT
 from django.template.loader import render_to_string
@@ -37,7 +38,6 @@ def send_activation_notificcation(user) -> bool:
             template_name="email/activation_letter_subject.txt",
             context=context,
         )
-
 
         # user_dict = UsersSerializer()
         body_text = render_to_string(

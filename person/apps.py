@@ -27,11 +27,17 @@ class PersonConfig(AppConfig):
         :return:
         """
         from django.contrib.auth.models import Group, Permission
+
         groups_permissions = {
             "BASE": ["view_driverreport"],
             "DRIVER": ["view_driverreport", "add_driverreport", "change_driverreport"],
-            'MANAGER': ['view_driverreport', 'change_driverreport'],
-            'ADMIN': ['view_driverreport', "add_driverreport", 'change_driverreport', "delete_driverreport"],
+            "MANAGER": ["view_driverreport", "change_driverreport"],
+            "ADMIN": [
+                "view_driverreport",
+                "add_driverreport",
+                "change_driverreport",
+                "delete_driverreport",
+            ],
         }
 
         for group_name, perm_codenames in groups_permissions.items():
@@ -39,7 +45,10 @@ class PersonConfig(AppConfig):
             for codename in perm_codenames:
                 perm_list = Permission.objects.filter(codename=codename)
                 if len(perm_list) == 0:
-                    log.info("%s: 'codename' not found." % PersonConfig.__class__.__name__ + self.ready.__name__)
+                    log.info(
+                        "%s: 'codename' not found." % PersonConfig.__class__.__name__
+                        + self.ready.__name__
+                    )
                     continue
                 perm = perm_list[0]
                 group.permissions.add(perm)
