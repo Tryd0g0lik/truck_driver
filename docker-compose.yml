@@ -1,27 +1,4 @@
 services:
-    backend:
-        container_name: truck_driver
-        build:
-          dockerfile: Dockerfile
-          context: .
-        env_file: ./.env
-        command:
-          - bash
-          - -c
-          - |
-            python3 ./manage.py makemigrations
-            python3 ./manage.py migrate
-            python3 ./manage.py collectstatic --clear --noinput
-            daphne -b 0.0.0.0 -p 8000 project.asgi:application
-
-        volumes:
-           - volume_static:/www/src/collectstatic
-        depends_on:
-          - db
-          - redis
-        ports:
-          - "8000:8000"
-
     db:
         container_name: postgres_truckdriver
         image: postgres
@@ -32,12 +9,35 @@ services:
             - POSTGRES_DB=${POSTGRES_DB}
         restart: unless-stopped
         healthcheck:
-            test: ['CMD-SHELL', '${POSTGRES_DB} -U ${POSTGRES_USER}']
+            test: ['CMD-SHELL', '-d ${POSTGRES_DB} -U ${POSTGRES_USER}']
             interval: 5s
             timeout: 5s
             retries: 5
         ports:
-            - "5433:5432"
+            - "5432:5432"
+    backend:
+        container_name: truck_driver
+        build:
+          dockerfile: ./Dockerfile
+          context: .
+        env_file: ./.env
+        command:
+            - bash
+            - -c
+            - |              
+              python3 ./manage.py makemigrations
+              python3 ./manage.py migrate
+              python3 ./manage.py collectstatic --clear --noinput
+              daphne -b 0.0.0.0 -p 8000 project.asgi:application
+
+        volumes:
+           - ./:/www/src
+           - volume_static:/www/src/collectstatic
+        depends_on:
+          - db
+          - redis
+        ports:
+          - "8000:8000"
     redis:
         container_name: redis_truckdriver
         image: redis:7.2-alpine
@@ -46,13 +46,9 @@ services:
             interval: 30s
             timeout: 10s
             retries: 3
-        command:
-            - redis-server
-            - --bind 0.0.0.0
-            - --maxmemory 200mb
-            - --protected-mode no
-            - --maxmemory-policy allkeys-lru
-            - --save ""
+
+        #command:
+         #   - --bind 0.0.0.0
         volumes:
             - redis_data:/data
         depends_on:
@@ -60,17 +56,31 @@ services:
         ports:
             - "6380:6379"
         restart: unless-stopped
-        deploy:
-            resources:
-                limits:
-                    memory: 250M
+    celery:
+        container_name: celery_truckdriver
+        build:
+            context: .
+            dockerfile: ./Dockerfile  # Тот же Dockerfile, что и для backend
+        env_file: ./.env
+        command:
+            - sh
+            - -c
+            - "celery -A project.celery worker --loglevel=info"
+
+        volumes:
+            - .:/www/src
+        depends_on:
+            - db
+            - redis
+        restart: unless-stopped
+
     nginx:
         container_name: nginx
         build:
             context: ./nginx
             dockerfile: Dockerfile
         depends_on:
-            - www
+            - backend
         volumes:
             - volume_static:/www/src/collectstatic
         restart: on-failure
@@ -78,4 +88,4 @@ services:
             - "80:80"
 volumes:
     redis_data:
-    volume_static
+    volume_static:
