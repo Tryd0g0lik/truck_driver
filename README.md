@@ -137,6 +137,7 @@ API__POST_REGISTERATION=/api/auth/register/
 |"`Celery`"|"`Radis`"| "`PostgreSQL` or "`ASQLite`" |
 |"`daphne`"|"`Signal`"| "`pytest`"                |
 |[swagger](./swagger)|[nginx](./nginx/default.conf)|[docker-compose](./docker-compose.yml)   |
+|daphna server|| |
  
 ----
 
@@ -306,8 +307,6 @@ You are will see the nice image\
 ![GitHUb Action](./img/giit_action.png)
 
 ### Linux
-
-![img.png](img.png)
 
 
 **FIles of '*.exp' and '*.sh'**\
