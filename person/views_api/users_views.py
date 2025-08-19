@@ -408,7 +408,7 @@ class UserViews(ViewSet):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
-        response.data = {"data": "User have not activated"}
+        response.data = {"data": "User have was activated before"}
         return response
 
     @staticmethod
