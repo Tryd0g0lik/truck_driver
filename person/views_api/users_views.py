@@ -7,8 +7,7 @@ import asyncio
 import re
 from datetime import datetime
 
-from typing import Any, List
-from collections.abc import Callable
+from typing import List
 
 from django.shortcuts import get_object_or_404
 from kombu.exceptions import OperationalError
@@ -32,7 +31,7 @@ from person.access_tokens import AccessToken
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
-
+from project.service import sync_for_async
 from project.settings import SIMPLE_JWT
 from person.binaries import Binary
 from dotenv_ import SECRET_KEY_DJ
@@ -43,11 +42,6 @@ from dotenv import load_dotenv
 load_dotenv()
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
-
-
-async def sync_for_async(fn: Callable[[Any], Any], *args, **kwargs):
-    # return await asyncio.create_task(asyncio.to_thread(fn, *args, **kwargs))
-    return await asyncio.to_thread(fn, *args, **kwargs)
 
 
 def new_connection(data) -> list:
@@ -269,7 +263,6 @@ class UserViews(ViewSet):
                 # looking to the relational db.
                 async for key_one in iterator_get_person_cache(client):
                     b_caches_user = await client.get(key_one)
-                    # caches_user = json.loads(b_caches_user.encode())
                     caches_user = json.loads(b_caches_user.decode())
                     # check username
                     if (
@@ -277,6 +270,8 @@ class UserViews(ViewSet):
                         and isinstance(caches_user, dict)
                         and caches_user.__getitem__("username") == username
                     ):
+                        # We do actively for user when found his to the cache.
+                        caches_user["is_active"] = True
                         user_list.append(caches_user)
                         break
                 await client.aclose()
@@ -288,8 +283,11 @@ class UserViews(ViewSet):
                     user_one = user_list.__getitem__(0).__getattribute__("id")
                     # RUN THE CELERY's TASK - Update CACHE's USER. CHECK the  async_task_user_login by steps!!
                     task_user_login.apply_async(kwargs={"user_id": user_one})
-                    serializ = AsyncUsersSerializer(user_list[0]).data
-                    user_list = [serializ.copy()]
+                    # we do actively for user when found his to the Users's model
+                    user_list[0].is_active = True
+                    serializ = AsyncUsersSerializer(user_list[0])
+                    res = await sync_for_async((lambda: serializ.data))
+                    user_list = [res.copy()]
                 if len(user_list) == 0:
                     response.data = {"data": "User was not found."}
                     response.status_code = status.HTTP_404_NOT_FOUND
@@ -314,9 +312,7 @@ class UserViews(ViewSet):
             user = await asyncio.to_thread(get_object_or_404, Users, **kwargs)
             request.__setattr__("user", user)
             # SET, Caching a new session & person of user.
-
             kwargs = {"user": user, "db": 1}
-
             task1 = asyncio.create_task(
                 self._async_caching(
                     f"user:{user.__getattribute__("id")}:person", **kwargs
@@ -385,7 +381,6 @@ class UserViews(ViewSet):
                     asyncio.to_thread(task_get_user_prop, user_list),
                     task1,
                     task2,
-                    # self._async_caching(f"user:{user_list[0]['id']}:person", kwargs={"user": user_list[0], "db": 1}),
                 )
 
                 data = {
