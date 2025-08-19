@@ -1,10 +1,8 @@
-# middleware.py
 import base64
 import logging
 import asyncio
 from django.http import HttpRequest
 from django.contrib.auth.models import AnonymousUser
-from redis import RedisError
 
 from person.binaries import Binary
 from person.models import Users

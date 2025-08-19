@@ -247,6 +247,7 @@ File "`project/settings.py`" have a basis option plus:
 - "`PASSWORD_HASHERS`";
 - "`cors`" and "`cookis`" options; 
 - "`rest_framework settings and jwt-tokens`" This is async DRF and the autentification and JWT wrought DRF.
+- "`project.middleware.RedisAuthMiddleware`" about this, [we see below](#middleware);
 - "`debug toolbar daphne`" By basis command "`py manage.py runser`" app will run wrought the async server "`daphne`"; 
 - "`email_backend`" This options for works with user's registrations and authentification;
 - "`webpack_loader`" for a work with frontend wrought "`webpack`";
@@ -321,6 +322,13 @@ For 16 hours for me didn't have time did UI for the google-map (by link 'Raport'
 Now, you can  create a new user, only and his will be record to the cache, auto.
 
 If what, i'm reade to continue working. Thanks.  
+
+[//]: # (## Middleware)
+
+[//]: # (Промежуточная функция.\)
+
+[//]: # (Запрос из клиента нам даёт "`access_token`" или "`reffresh_token`".\)
+[//]: # (Из токена мы получаем путь к пользователю, который сделал запрос на сервер.)
 
 
 
