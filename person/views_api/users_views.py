@@ -1,6 +1,5 @@
 import base64
 import json
-import threading
 import time
 import logging
 import asyncio
@@ -17,7 +16,6 @@ from django.http import JsonResponse, HttpRequest, HttpResponse
 from rest_framework.response import Response
 from rest_framework import serializers, status
 from adrf.viewsets import ViewSet
-from unicodedata import category
 from django.contrib.auth.models import Group
 from person.apps import signal_user_registered
 from person.cookies import Cookies
@@ -26,7 +24,7 @@ from person.tasks.task_cache_hew_user import task_postman_for_user_id
 from person.models import Users
 from person.hasher import Hasher
 from person.views_api.redis_person import RedisOfPerson
-from person.views_api.serializers import AsyncUsersSerializer, CacheUsersSerializer
+from person.views_api.serializers import AsyncUsersSerializer
 from person.access_tokens import AccessToken
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -262,6 +260,7 @@ class UserViews(ViewSet):
                 # we wee to the redis. If there, we won't find, means that we would be
                 # looking to the relational db.
                 async for key_one in iterator_get_person_cache(client):
+                    # Here is a Radis
                     b_caches_user = await client.get(key_one)
                     caches_user = json.loads(b_caches_user.decode())
                     # check username
@@ -276,7 +275,7 @@ class UserViews(ViewSet):
                         break
                 await client.aclose()
                 if len(user_list) == 0:
-                    # Redis, didn't give  for us anything, iand we go to the relational db.
+                    # Redis, didn't give for us anything, and we go to the relational db.
                     user_list: List[U] = [
                         view async for view in Users.objects.filter(username=username)
                     ]
