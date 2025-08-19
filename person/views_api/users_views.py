@@ -5,11 +5,14 @@ import time
 import logging
 import asyncio
 import re
+from datetime import datetime
 
-from typing import Any
+from typing import Any, List
 from collections.abc import Callable
+
+from django.shortcuts import get_object_or_404
 from kombu.exceptions import OperationalError
-from asgiref.sync import sync_to_async
+from django.contrib.auth import login as login_user
 from django.db import connections, transaction
 from django.http import JsonResponse, HttpRequest, HttpResponse
 from rest_framework.response import Response
@@ -18,11 +21,14 @@ from adrf.viewsets import ViewSet
 from unicodedata import category
 from django.contrib.auth.models import Group
 from person.apps import signal_user_registered
+from person.cookies import Cookies
+from person.interfaces import U
 from person.tasks.task_cache_hew_user import task_postman_for_user_id
 from person.models import Users
 from person.hasher import Hasher
 from person.views_api.redis_person import RedisOfPerson
-from person.views_api.serializers import AsyncUsersSerializer
+from person.views_api.serializers import AsyncUsersSerializer, CacheUsersSerializer
+from person.access_tokens import AccessToken
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
@@ -40,7 +46,8 @@ configure_logging(logging.INFO)
 
 
 async def sync_for_async(fn: Callable[[Any], Any], *args, **kwargs):
-    return await asyncio.create_task(asyncio.to_thread(fn, *args, **kwargs))
+    # return await asyncio.create_task(asyncio.to_thread(fn, *args, **kwargs))
+    return await asyncio.to_thread(fn, *args, **kwargs)
 
 
 def new_connection(data) -> list:
@@ -170,8 +177,13 @@ class UserViews(ViewSet):
                 await serializer.asave()
 
                 data: dict = dict(serializer.data).copy()
-                group_list = Group.objects.filter(name=data.get("category"))
-                if len(group_list) > 0:
+                group_list = [
+                    view
+                    async for view in Group.objects.filter(
+                        name=serializer.data.get("category")
+                    )
+                ]
+                if len(list(group_list)) > 0:
                     user_new = [
                         view async for view in Users.objects.filter(pk=data.get("id"))
                     ]
@@ -182,9 +194,7 @@ class UserViews(ViewSet):
                     await user_new[0].asave()
                 # # RUN THE TASK - Update CACHE's USER -send id to the redis from celer's task
 
-                delay = task_postman_for_user_id.delay
-                t = threading.Thread(target=delay, args=(data.__getitem__("id"),))
-                t.start()
+                task_postman_for_user_id.delay((data.__getitem__("id"),))
 
             except (OperationalError, Exception) as error:
                 # RESPONSE WILL BE TO SEND. CODE 500
@@ -224,6 +234,188 @@ class UserViews(ViewSet):
         response.data = {"data": "User was created before."}
         return response
 
+    async def active(self, request: HttpRequest, pk=0, **kwargs) -> HttpResponse:
+        from person.tasks.task_user_is_login import task_user_login
+
+        user = request.user
+        data = request.data
+        # Validate of data
+        response = Response(status=status.HTTP_401_UNAUTHORIZED)
+        password = data.get("password").split().__getitem__(0)
+        username = data.get("username").split().__getitem__(0)
+        try:
+            response_validate = await asyncio.gather(
+                asyncio.to_thread(self.validate_password, password),
+                asyncio.to_thread(self.validate_username, username),
+            )
+
+        except Exception as error:
+            response.data = {"data": error.args[0]}
+            return response
+        if not user.is_authenticated:
+            try:
+                if not user.is_authenticated and None in response_validate:
+                    # DATA IS NOT VALIDATED
+                    response.data = {
+                        "data": "User is authenticated ot data have not corrected"
+                    }
+                    return response
+                hash_password = self.get_hash_password(password)
+                # Check exists of user to the both db
+                client = RedisOfPerson(db=1)
+                user_list: List[dict] = []
+                # 1/2 db
+                # we wee to the redis. If there, we won't find, means that we would be
+                # looking to the relational db.
+                async for key_one in iterator_get_person_cache(client):
+                    b_caches_user = await client.get(key_one)
+                    # caches_user = json.loads(b_caches_user.encode())
+                    caches_user = json.loads(b_caches_user.decode())
+                    # check username
+                    if (
+                        caches_user
+                        and isinstance(caches_user, dict)
+                        and caches_user.__getitem__("username") == username
+                    ):
+                        user_list.append(caches_user)
+                        break
+                await client.aclose()
+                if len(user_list) == 0:
+                    # Redis, didn't give  for us anything, iand we go to the relational db.
+                    user_list: List[U] = [
+                        view async for view in Users.objects.filter(username=username)
+                    ]
+                    user_one = user_list.__getitem__(0).__getattribute__("id")
+                    # RUN THE CELERY's TASK - Update CACHE's USER. CHECK the  async_task_user_login by steps!!
+                    task_user_login.apply_async(kwargs={"user_id": user_one})
+                    serializ = AsyncUsersSerializer(user_list[0]).data
+                    user_list = [serializ.copy()]
+                if len(user_list) == 0:
+                    response.data = {"data": "User was not found."}
+                    response.status_code = status.HTTP_404_NOT_FOUND
+                    return response
+            except Exception as error:
+                # SERVER HAS ERROR
+                response.data = {"data": error.args[0]}
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return response
+            user_one = user_list.__getitem__(0)
+            # Check password of user
+            if type(user_list) == List[U]:
+                if not (user_one.__getattribute__("password") == hash_password):
+                    log.error("Invalid password")
+                    return response
+                # RUN THE CELERY's TASK
+                task_user_login.apply_async(
+                    kwargs={"user_id": user_one.__getattribute__("id")}
+                )
+            # GET AUTHENTICATION (USER SESSION) IN DJANGO
+            kwargs = {"username": username, "password": hash_password}
+            user = await asyncio.to_thread(get_object_or_404, Users, **kwargs)
+            request.__setattr__("user", user)
+            # SET, Caching a new session & person of user.
+
+            kwargs = {"user": user, "db": 1}
+
+            task1 = asyncio.create_task(
+                self._async_caching(
+                    f"user:{user.__getattribute__("id")}:person", **kwargs
+                )
+            )
+
+            if user is not None:
+                request.user = user
+                await asyncio.to_thread(login_user, request, user=user)
+
+            kwargs.__setitem__("db", 0)
+            task2 = asyncio.create_task(
+                self._async_caching(
+                    f"user:{user.__getattribute__('id')}:session", **kwargs
+                )
+            )
+
+            try:
+                """
+                Cashing of user's session
+                """
+                b = Binary()
+                session_key_user_str: str = b.str_to_binary(
+                    f"user:{user.__getattribute__('id')}:session"
+                ).decode()
+                coockie = Cookies(session_key_user_str, response)
+                response: HttpResponse = coockie.session_user()
+            except Exception as error:
+                log.error(
+                    "%s: CACHE OF USER is invalid. ERROR => %s"
+                    % (UserViews.__class__.__name__ + self.login.__name__, error)
+                )
+            try:
+                # GET ACCESS TOKENS
+                accesstoken = AccessToken(user)
+                tokens = await accesstoken.async_token()
+                current_time = datetime.now()
+                access_time = (SIMPLE_JWT.__getitem__("ACCESS_TOKEN_LIFETIME")).seconds
+                refresh_time = (
+                    SIMPLE_JWT.__getitem__("REFRESH_TOKEN_LIFETIME") + current_time
+                ).timestamp() + time.time()
+
+            except Exception as ex:
+                return Response({"data": ex.args}, status=status.HTTP_401_UNAUTHORIZED)
+            try:
+                """BELOW IS TASKS"""
+
+                # Get properties of user for publication
+                def task_get_user_prop(item_list: list) -> dict:
+                    return {
+                        k: v for k, v in item_list[0].items() if k not in ["password"]
+                    }
+
+                # Token base64
+                def task_get_usertoken(item) -> str:
+                    access_binary = Binary()
+                    access_base64_binary = access_binary.object_to_binary(
+                        item.access_token
+                    )
+                    return base64.b64encode(access_base64_binary).decode()
+
+                """RUN TASKS: access & refresh token base64 & user properties"""
+                result_list = await asyncio.gather(
+                    asyncio.to_thread(task_get_usertoken, tokens),
+                    asyncio.to_thread(task_get_usertoken, tokens),
+                    asyncio.to_thread(task_get_user_prop, user_list),
+                    task1,
+                    task2,
+                    # self._async_caching(f"user:{user_list[0]['id']}:person", kwargs={"user": user_list[0], "db": 1}),
+                )
+
+                data = {
+                    "data": [
+                        {"user": {**result_list[2]}},
+                        {
+                            "token_access": (
+                                result_list[0] if len(result_list) > 0 else ""
+                            ),
+                            "live_time": access_time,
+                        },
+                        {
+                            "token_refresh": (
+                                result_list[1] if len(result_list) > 1 else ""
+                            ),
+                            "live_time": refresh_time,
+                        },
+                    ]
+                }
+                JsonResponse.cookies = response.cookies
+                return JsonResponse(data=data, safe=False, status=status.HTTP_200_OK)
+            except Exception as error:
+                return Response(
+                    {"data": error.args.__getitem__(0)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+        response.data = {"data": "User have not activated"}
+        return response
+
     @staticmethod
     def get_hash_password(password: str) -> str:
         """
@@ -253,6 +445,42 @@ class UserViews(ViewSet):
 
     @staticmethod
     def validate_password(value: str) -> None | object:
-
         regex = re.compile(r"([\w%]{9,255})")
         return regex.match(value)
+
+    @staticmethod
+    async def _async_caching(key: str, **kwargs) -> bool:
+        """
+        by default:
+        - host: str = f"{DB_TO_RADIS_HOST}",
+        - port: int = 6380,
+        - db: Union[str, int] = 1 (db from redis. 1 - it's cache params of user. 0 - it's cache session of user ),
+
+        Redis's cache
+        Session of user saving in cache's session db (Redis 0). "kwargs={'user': <Users's object >}
+
+        Caching of user's db in cache's db (Redis 1). Below, it's cache's db.
+        Now will be saving on the 27 hours.
+        'task_user_from_cache' task wil be to upgrade postgres at ~ am 01:00
+        Timetable look the 'project.celery.app.base.Celery.conf'
+        :param str key: This is key element, by key look up where it will be saved. Example: "user:25:person"
+
+        :param kwargs: {'user': < user_object >, "db": < integer it's 0 or 1>}
+        :return: bool. If returning the True, it means all OK/ If the False, - not OK and look the log's file.
+        """
+        db_numb: int = kwargs.__getitem__("db")
+        client = RedisOfPerson(db=db_numb)
+        if not client.ping():
+            return False
+        try:
+            kwargs = {"user": kwargs.__getitem__("user")}
+            await client.async_set_cache_user(key=key, **kwargs)
+            return True
+        except Exception as error:
+            log.error(
+                "%s: CACHE OF USER is invalid. ERROR => %s"
+                % (UserViews.__class__.__name__ + UserViews.login.__name__, error)
+            )
+            return False
+        finally:
+            await client.aclose()

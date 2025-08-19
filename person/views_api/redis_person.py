@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import json
 import logging
@@ -8,7 +9,7 @@ from redis.exceptions import ConnectionError
 from dotenv_ import DB_TO_RADIS_HOST, DB_TO_RADIS_PORT
 from logs import configure_logging
 from person.binaries import Binary
-from person.views_api.serializers import CacheUsersSerializer
+from person.views_api.serializers import CacheUsersSerializer, AsyncUsersSerializer
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
@@ -100,13 +101,29 @@ class RedisOfPerson(Redis, Binary):
                 """
                 User's object save in cache's session (Redis 0)
                 """
+                # res  = await asyncio.to_thread(CacheUsersSerializer, user)
+                user.is_active = True
+                res = AsyncUsersSerializer(user).data
+                log.info("TEST=> %s" % str(res))
                 b_user = (
                     base64.b64encode(self.object_to_binary(user))
                     if self.db == 0
-                    else CacheUsersSerializer(user)
+                    else json.dumps(res).encode()
                 )
-                await self.set(key, json.dumps({"b_user": b_user.decode()}))
+                result_str: str = (
+                    b_user.decode(
+                        "utf-8",
+                        errors="DECODE ERROR - %s:" % RedisOfPerson.__class__.__name__
+                        + "."
+                        + self.async_set_cache_user.__name__,
+                    )
+                    if self.db == 1
+                    else json.dumps({"b_user": b_user.decode()})
+                )
+
+                await self.set(key, value=result_str)
                 return True
+
         except Exception as error:
             log.info(
                 ValueError(

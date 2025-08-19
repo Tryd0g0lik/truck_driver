@@ -11,7 +11,16 @@ class AsyncUsersSerializer(ModelSerializer):
 
     class Meta:
         model = Users
-        fields = ["id", "username", "email", "password", "category"]
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "password",
+            "category",
+            "date_joined",
+        ]
 
 
 class CacheUsersSerializer(serializers.ModelSerializer):
