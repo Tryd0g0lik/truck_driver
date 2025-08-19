@@ -3,7 +3,7 @@
 [Front](https://github.com/Tryd0g0lik/truck_driver_front)
 
 
-My [work on the HTTP](http://83.166.245.209/). If you want? i can relocate files to the "`Vercel.app`".
+My [work on the HTTP](http://83.166.245.209/). If you want? i can relocate of files to the "`Vercel.app`".
 
 # TruckDriver
 Now, user can to registrate.
