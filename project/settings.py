@@ -108,7 +108,7 @@ DATABASES = {
         'NAME': f'{POSTGRES_DB}',
         'USER': f'{POSTGRES_USER}',
         'PASSWORD': POSTGRES_PASSWORD,
-        'HOST': f'db',
+        'HOST': f'{POSTGRES_HOST}',
         'PORT': f'{POSTGRES_PORT}',
         "KEY_PREFIX": "drive_", # it's my prefix for the keys
     }
