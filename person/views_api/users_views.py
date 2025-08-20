@@ -6,6 +6,7 @@ import asyncio
 import re
 from datetime import datetime
 
+
 from typing import List
 
 from django.shortcuts import get_object_or_404
@@ -226,6 +227,170 @@ class UserViews(ViewSet):
         response.data = {"data": "User was created before."}
         return response
 
+    @swagger_auto_schema(
+        operation_description="""
+                Method: POST and the fixed pathname of url
+                Example PATHNAME: "/api/auth/person/0/active/"
+
+                """,
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            title="BodyData",
+            in_=openapi.IN_BODY,
+            required=["username", "password"],
+            properties={
+                "username": openapi.Schema(example="Serge", type=openapi.TYPE_STRING),
+                "password": openapi.Schema(
+                    example="nH2qGiehvEXjNiYqp3bOVtAYv....", type=openapi.TYPE_STRING
+                ),
+            },
+        ),
+        responses={
+            200: openapi.Response(
+                description="User data: access & refresh the tokens.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "data": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                allOf=[
+                                    openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "user": openapi.Schema(
+                                                type=openapi.TYPE_OBJECT,
+                                                properties={
+                                                    # Здесь добавьте свойства пользователя,
+                                                    # аналогично вашему первому примеру
+                                                    "id": openapi.Schema(
+                                                        type=openapi.TYPE_INTEGER,
+                                                        format=openapi.FORMAT_INT64,
+                                                        example=123,
+                                                    ),
+                                                    "username": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="Serge",
+                                                    ),
+                                                    "last_login": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "first_name": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="",
+                                                    ),
+                                                    "email": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_EMAIL,
+                                                    ),
+                                                    "is_staff": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "is_active": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "date_joined": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "created_at": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "updated_at": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "category": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="DRIVER",
+                                                    ),
+                                                    "password": openapi.Schema(
+                                                        type=openapi.TYPE_STRING
+                                                    ),
+                                                    "is_sent": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "is_verified": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "verification_code": openapi.Schema(
+                                                        type=openapi.TYPE_STRING
+                                                    ),
+                                                    "balamce": openapi.Schema(
+                                                        type=openapi.TYPE_NUMBER,
+                                                        format=openapi.FORMAT_INT64,
+                                                    ),
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                    openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "access": openapi.Schema(
+                                                type=openapi.TYPE_OBJECT,
+                                                properties={
+                                                    "token_access": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+                                                    ),
+                                                    "live_time": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="465998",
+                                                    ),
+                                                },
+                                            )
+                                        },
+                                    ),
+                                    openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "reffresh": openapi.Schema(
+                                                type=openapi.TYPE_OBJECT,
+                                                properties={
+                                                    "token_refresh": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+                                                    ),
+                                                    "live_time": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="12349679.02",
+                                                    ),
+                                                },
+                                            )
+                                        },
+                                    ),
+                                ],
+                            ),
+                        )
+                    },
+                ),
+            ),
+            401: "Some wink what wrong/ Check you data",
+            400: "Bad request",
+            500: "Internal server error",
+        },
+        tags=["person"],
+        manual_parameters=[
+            openapi.Parameter(
+                # https://drf-yasg.readthedocs.io/en/stable/custom_spec.html?highlight=properties
+                name="X-CSRFToken",
+                title="X-CSRFToken",
+                in_=openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+            )
+        ],
+    )
     async def active(self, request: HttpRequest, pk=0, **kwargs) -> HttpResponse:
         from person.tasks.task_user_is_login import task_user_login
 
@@ -384,19 +549,21 @@ class UserViews(ViewSet):
 
                 data = {
                     "data": [
-                        {"user": {**result_list[2]}},
                         {
-                            "token_access": (
-                                result_list[0] if len(result_list) > 0 else ""
-                            ),
-                            "live_time": access_time,
-                        },
-                        {
-                            "token_refresh": (
-                                result_list[1] if len(result_list) > 1 else ""
-                            ),
-                            "live_time": refresh_time,
-                        },
+                            "user": {**result_list[2]},
+                            "access": {
+                                "token_access": (
+                                    result_list[0] if len(result_list) > 0 else ""
+                                ),
+                                "live_time": access_time,
+                            },
+                            "refresh": {
+                                "token_refresh": (
+                                    result_list[1] if len(result_list) > 1 else ""
+                                ),
+                                "live_time": refresh_time,
+                            },
+                        }
                     ]
                 }
                 JsonResponse.cookies = response.cookies

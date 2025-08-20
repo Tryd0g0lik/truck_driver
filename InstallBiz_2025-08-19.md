@@ -23,7 +23,7 @@ https://github.com/Tryd0g0lik/truck_driver/tree/cicd
 	https://github.com/Tryd0g0lik/truck_driver/tree/cicd/person/contribute
 
 #### Note:
-В данный момент через консоль. Скрины в файле README. Тоесть к потовому сервису не подключен.
+В данный момент через консоль. Скрины в файле README. Тоесть к почтовому сервису не подключен.
 
 Далее....
 
@@ -39,7 +39,7 @@ https://github.com/Tryd0g0lik/truck_driver/tree/dev
  - middleware написан
 	https://github.com/Tryd0g0lik/truck_driver/blob/dev/project/middleware.py
 
-Тут определяем пользователя который отправил запрос из клиента.браузера. \
+Тут определяем пользователя который отправил запрос из клиента/браузера. \
 Реляционная база данных закеширована не Redis.  Поэтому написан middleware, чтоб определить - аноним или user отправил запрос из клиента.
 
 #### Note: 
