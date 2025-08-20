@@ -1,6 +1,6 @@
 import logging
 from django.apps import AppConfig
-
+from django.db.models.signals import post_migrate
 from django.dispatch import Signal
 from logs import configure_logging
 from dotenv import load_dotenv
@@ -11,47 +11,49 @@ log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
 
 
+def setup_groups(sender, **kwargs):
+    """
+    Create the Permissions for user registration.
+    We can see who is our user. He's : 'BASE', 'DRIVER', 'MANAGER', 'ADMIN'.
+    Permissions:
+     - 'view_driverreport' only read of forms truck driver;
+     - 'add_driverreport' adding the new data;
+     - 'change_driverreport' change the data of forms/blank of truck driver;
+     - 'delete_driverreport' removing the forms/black of truck driver.
+    :return:
+    """
+    from django.contrib.auth.models import Group, Permission
+
+    groups_permissions = {
+        "BASE": ["view_driverreport"],
+        "DRIVER": ["view_driverreport", "add_driverreport", "change_driverreport"],
+        "MANAGER": ["view_driverreport", "change_driverreport"],
+        "ADMIN": [
+            "view_driverreport",
+            "add_driverreport",
+            "change_driverreport",
+            "delete_driverreport",
+        ],
+    }
+
+    for group_name, perm_codenames in groups_permissions.items():
+        group, _ = Group.objects.get_or_create(name=group_name)
+        for codename in perm_codenames:
+            perm_list = Permission.objects.filter(codename=codename)
+            if len(perm_list) == 0:
+                log.info("%s: 'codename' not found." % setup_groups.__name__)
+                continue
+            perm = perm_list[0]
+            group.permissions.add(perm)
+
+
 class PersonConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "person"
 
     def ready(self):
-        """
-        Create the Permissions for user registration.
-        We can see who is our user. He's : 'BASE', 'DRIVER', 'MANAGER', 'ADMIN'.
-        Permissions:
-         - 'view_driverreport' only read of forms truck driver;
-         - 'add_driverreport' adding the new data;
-         - 'change_driverreport' change the data of forms/blank of truck driver;
-         - 'delete_driverreport' removing the forms/black of truck driver.
-        :return:
-        """
-        from django.contrib.auth.models import Group, Permission
 
-        groups_permissions = {
-            "BASE": ["view_driverreport"],
-            "DRIVER": ["view_driverreport", "add_driverreport", "change_driverreport"],
-            "MANAGER": ["view_driverreport", "change_driverreport"],
-            "ADMIN": [
-                "view_driverreport",
-                "add_driverreport",
-                "change_driverreport",
-                "delete_driverreport",
-            ],
-        }
-
-        for group_name, perm_codenames in groups_permissions.items():
-            group, _ = Group.objects.get_or_create(name=group_name)
-            for codename in perm_codenames:
-                perm_list = Permission.objects.filter(codename=codename)
-                if len(perm_list) == 0:
-                    log.info(
-                        "%s: 'codename' not found." % PersonConfig.__class__.__name__
-                        + self.ready.__name__
-                    )
-                    continue
-                perm = perm_list[0]
-                group.permissions.add(perm)
+        post_migrate.connect(setup_groups, sender=self)
 
 
 # send message from the registration part
