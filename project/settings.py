@@ -103,7 +103,7 @@ DATABASES = {
     #     'ENGINE': f'{DATABASE_ENGINE_LOCAL}',
     #     'NAME': BASE_DIR / f'{DATABASE_LOCAL}',
     # },
-    "assistant": {
+    "default": {
         'ENGINE': f'{DB_ENGINE}',
         'NAME': f'{POSTGRES_DB}',
         'USER': f'{POSTGRES_USER}',
