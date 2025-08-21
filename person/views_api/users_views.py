@@ -163,19 +163,56 @@ class UserViews(ViewSet):
 
             try:
                 password_hes = self.get_hash_password(data.get("password"))
+                log.info(
+                    "%s: 'password_hes'" % UserViews.__class__.__name__
+                    + "."
+                    + self.create.__name__
+                )
                 serializer = AsyncUsersSerializer(data=data)
+                log.info(
+                    "%s: 'serializer'" % UserViews.__class__.__name__
+                    + "."
+                    + self.create.__name__
+                )
                 # CHECK - VALID DATA
                 await self.serializer_validate(serializer)
+                log.info(
+                    "%s: 'await self.serializer_validate'"
+                    % UserViews.__class__.__name__
+                    + "."
+                    + self.create.__name__
+                )
                 serializer.validated_data["password"] = password_hes
+                log.info(
+                    "%s: '= password_hes'" % UserViews.__class__.__name__
+                    + "."
+                    + self.create.__name__
+                )
                 await serializer.asave()
+                log.info(
+                    "%s: 'serializer.asave'" % UserViews.__class__.__name__
+                    + "."
+                    + self.create.__name__
+                )
 
-                data: dict = dict(serializer.data).copy()
+                data: dict = await sync_for_async(lambda: serializer.data)
+
+                log.info(
+                    "%s: 'data.copy()'" % UserViews.__class__.__name__
+                    + "."
+                    + self.create.__name__
+                )
                 group_list = [
                     view
                     async for view in Group.objects.filter(
                         name=serializer.data.get("category")
                     )
                 ]
+                log.info(
+                    "%s: 'group_list'" % UserViews.__class__.__name__
+                    + "."
+                    + self.create.__name__
+                )
                 if len(list(group_list)) > 0:
                     user_new = [
                         view async for view in Users.objects.filter(pk=data.get("id"))
@@ -186,8 +223,19 @@ class UserViews(ViewSet):
                     user_new[0].is_active = False
                     await user_new[0].asave()
                 # # RUN THE TASK - Update CACHE's USER -send id to the redis from celer's task
-
+                log.info(
+                    "%s: BEFORE 'task_postman_for_user_id' of celere"
+                    % UserViews.__class__.__name__
+                    + "."
+                    + self.create.__name__
+                )
                 task_postman_for_user_id.delay((data.__getitem__("id"),))
+                log.info(
+                    "%s: AFTER 'task_postman_for_user_id' of celere"
+                    % UserViews.__class__.__name__
+                    + "."
+                    + self.create.__name__
+                )
 
             except (OperationalError, Exception) as error:
                 # RESPONSE WILL BE TO SEND. CODE 500
