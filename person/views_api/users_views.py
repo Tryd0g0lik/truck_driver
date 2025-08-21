@@ -53,7 +53,7 @@ def new_connection(data) -> list:
         try:
             cursor.execute(
                 """SELECT * FROM person WHERE username = '%s' AND email = '%s';"""
-                % (data.get("username"), data.get("email"))
+                % (data.get("username"), data.get("email").strip())
             )
         except Exception as error:
             log.error(
@@ -125,8 +125,8 @@ class UserViews(ViewSet):
         data = request.data
         try:
             # Validators
-            check_validate = [self.validate_username(data.get("username"))]
-            check_validate.append(self.validate_password(data.get("password")))
+            check_validate = [self.validate_username(data.get("username").strip())]
+            check_validate.append(self.validate_password(data.get("password").strip()))
             fals_data = [item for item in check_validate if not item]
             if len(fals_data) > 0:
                 log.error(
@@ -140,6 +140,13 @@ class UserViews(ViewSet):
                     + self.create.__name__
                 )
         except (AttributeError, TypeError, Exception) as error:
+            log.error(
+                "%s: ERROR => %s"
+                % (
+                    UserViews.__class__.__name__ + "." + self.create.__name__,
+                    error.args[0],
+                )
+            )
             return Response(
                 {"data": " Data type is not validate: %s" % error.args},
                 status=status.HTTP_401_UNAUTHORIZED,
@@ -153,6 +160,13 @@ class UserViews(ViewSet):
             )
 
         except Exception as error:
+            log.error(
+                "%s: ERROR => %s"
+                % (
+                    UserViews.__class__.__name__ + "." + self.create.__name__,
+                    error.args[0],
+                )
+            )
             # RESPONSE WILL SEND. CODE 401
             response.data = {"data": error.args}
             response.status_code = status.HTTP_401_UNAUTHORIZED
@@ -243,7 +257,10 @@ class UserViews(ViewSet):
                 response.data = {"data": error.args.__getitem__(0)}
                 response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
             return response
-
+        log.error(
+            "%s: User was created before."
+            % (UserViews.__class__.__name__ + "." + self.create.__name__,)
+        )
         response.data = {"data": "User was created before."}
         return response
 
@@ -418,8 +435,8 @@ class UserViews(ViewSet):
         data = request.data
         # Validate of data
         response = Response(status=status.HTTP_401_UNAUTHORIZED)
-        password = data.get("password").split().__getitem__(0)
-        username = data.get("username").split().__getitem__(0)
+        password = data.get("password").split().__getitem__(0).strip()
+        username = data.get("username").split().__getitem__(0).strip()
         try:
             response_validate = await asyncio.gather(
                 asyncio.to_thread(self.validate_password, password),
