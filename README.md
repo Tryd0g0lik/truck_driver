@@ -333,5 +333,26 @@ If what, i'm reade to continue working. Thanks.
 [//]: # (Из токена мы получаем путь к пользователю, который сделал запрос на сервер.)
 
 
+## Permission
+<details close>
+<summary>Permissions for 'person'</summary>
 
+Creating the groups of  permissions bit path "'person/apps.py'" and classes "`person/permissions.py`" for distribution of rights
+```python
+groups_permissions = {
+        "BASE": ["view_driverreport"],
+        "DRIVER": ["view_driverreport", "add_driverreport", "change_driverreport"],
+        "MANAGER": ["view_driverreport", "add_driverreport", "change_driverreport"],
+        "ADMIN": [
+            "view_driverreport",
+            "add_driverreport",
+            "change_driverreport",
+            "delete_driverreport",
+        ],
+    }
+```
 
+</details>
+
+## Tests
+Testing through the 'pytest' "`__tests__/*`"
