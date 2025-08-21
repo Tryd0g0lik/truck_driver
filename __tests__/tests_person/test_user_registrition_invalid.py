@@ -6,7 +6,7 @@ import pytest
 import logging
 from logs import configure_logging
 from rest_framework.test import APIRequestFactory
-from rest_framework.response import Response
+from __tests__.__fixtures__.fix import fix_clear_db
 from django.contrib.auth.models import AnonymousUser
 
 from person.models import Users
@@ -33,10 +33,13 @@ configure_logging(logging.INFO)
 @pytest.mark.invalid
 @pytest.mark.xfail
 @pytest.mark.django_db
-async def test_person_invalid(username, email, password, category, expected) -> None:
+async def test_person_invalid(
+    fix_clear_db, username, email, password, category, expected
+) -> None:
     from person.views_api.users_views import UserViews
 
-    await clear_db()
+    # Here , we clear of db
+    await fix_clear_db()
 
     log.info(
         "%s: START TEST WHERE 'username': %s & 'email': %s & 'password': %s & 'category': %s & 'expecteD': %s"

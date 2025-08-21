@@ -4,13 +4,12 @@ __tests__/tests_person/test_user_registrition.py
 
 import pytest
 import logging
+from __tests__.__fixtures__.fix import fix_clear_db
 from logs import configure_logging
 from rest_framework.test import APIRequestFactory
-from rest_framework.response import Response
+
 from django.contrib.auth.models import AnonymousUser
 
-from person.models import Users
-from project.service import sync_for_async
 from project.views import CSRFTokenView
 
 log = logging.getLogger(__name__)
@@ -27,10 +26,13 @@ configure_logging(logging.INFO)
     ],
 )
 @pytest.mark.django_db
-async def test_person_valid(username, email, password, category, expected) -> None:
+async def test_person_valid(
+    fix_clear_db, username, email, password, category, expected
+) -> None:
     from person.views_api.users_views import UserViews
 
-    await clear_db()
+    # Here , we clear of db
+    await fix_clear_db()
     log.info(
         "%s: START TEST WHERE 'username': %s & 'email': %s & 'password': %s & 'category': %s & 'expecteD': %s"
         % (
@@ -84,17 +86,4 @@ async def test_person_valid(username, email, password, category, expected) -> No
 
     log.info(
         "%s: RESPONSE 'res_bool.data' %s" % (test_person_valid.__name__, response.data)
-    )
-
-
-async def clear_db():
-    filter_list = [view async for view in Users.objects.all()]
-    log.info(
-        "%s: GET ASYNC FILTER LEN: %s"
-        % (test_person_valid.__name__, str(len(filter_list)))
-    )
-    res = [await sync_for_async(view.delete) for view in filter_list]
-    log.info("%s: RES: %s" % (test_person_valid.__name__, res))
-    log.info(
-        "%s: FINALLY" % test_person_valid.__name__,
     )

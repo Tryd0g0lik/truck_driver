@@ -150,6 +150,8 @@ mateImageAI/
 │   ├── .gitignore
 │   ├── manage.py
 │   ├── requirements.txt
+│   ├── __tsts__/
+│   |   └──tests_person/*
 │   ├── collectstatic/
 │   |   └──drf-yasg/*
 │   |   └──admin/*
