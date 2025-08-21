@@ -1,5 +1,4 @@
 """
-project/asgi.py
 ASGI config for project project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.

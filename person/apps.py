@@ -1,7 +1,3 @@
-"""
-person/apps.py
-"""
-
 import logging
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate
@@ -31,7 +27,7 @@ def setup_groups(sender, **kwargs):
     groups_permissions = {
         "BASE": ["view_driverreport"],
         "DRIVER": ["view_driverreport", "add_driverreport", "change_driverreport"],
-        "MANAGER": ["view_driverreport", "change_driverreport"],
+        "MANAGER": ["view_driverreport", "add_driverreport", "change_driverreport"],
         "ADMIN": [
             "view_driverreport",
             "add_driverreport",

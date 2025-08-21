@@ -1,7 +1,3 @@
-"""
-person/tasks/task_user_from_cache_to_td_repeat.py
-"""
-
 import json
 import logging
 from celery import shared_task

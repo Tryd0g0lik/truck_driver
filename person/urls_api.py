@@ -1,7 +1,4 @@
-"""
-person/urls_api.py
-"""
-
+from django.db import router
 from rest_framework.routers import DefaultRouter
 from person.views_api.users_views import UserViews
 

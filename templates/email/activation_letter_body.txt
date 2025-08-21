@@ -1,9 +1,9 @@
-Hallo, dear {{ username }}!
+Hallo dear {{ username }}!
 You have been registered in TRUCK DRIVER.
 Now, you need to do authentification.
 For this, pleas to click by link and follow to our service.
 
-{{ host }}{% url 'user_activate' sign %}
+{{ host }}{% url 'person_app:parson' sign %}
 
 We, waiting for you!
 

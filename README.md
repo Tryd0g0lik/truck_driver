@@ -1,6 +1,9 @@
+[Для InstallBiz](https://github.com/Tryd0g0lik/truck_driver/blob/dev/InstallBiz_2025-08-19.md) 2028-08-19
+
 [Front](https://github.com/Tryd0g0lik/truck_driver_front)
 
-My [work on the HTTP](http://83.166.245.209/). If you want? i can relocate files to the "`Vercel.app`".
+
+My [work on the HTTP](http://83.166.245.209/). If you want? i can relocate of files to the "`Vercel.app`".
 
 # TruckDriver
 Now, user can to registrate.
@@ -27,7 +30,6 @@ On the side backend, inside the "`person/views_api/users_views.py::UserViews.cre
 
 ### Note:
 Receiving data passes by rule: Front doesn't know about the server; Server doesn't know about the Front. 
-
 
 ## This's working backend's stack
 
@@ -135,6 +137,7 @@ API__POST_REGISTERATION=/api/auth/register/
 |"`Celery`"|"`Radis`"| "`PostgreSQL` or "`ASQLite`" |
 |"`daphne`"|"`Signal`"| "`pytest`"                |
 |[swagger](./swagger)|[nginx](./nginx/default.conf)|[docker-compose](./docker-compose.yml)   |
+|daphna server|| |
  
 ----
 
@@ -248,6 +251,7 @@ File "`project/settings.py`" have a basis option plus:
 - "`PASSWORD_HASHERS`";
 - "`cors`" and "`cookis`" options; 
 - "`rest_framework settings and jwt-tokens`" This is async DRF and the autentification and JWT wrought DRF.
+- "`project.middleware.RedisAuthMiddleware`" about this, [we see below](#middleware);
 - "`debug toolbar daphne`" By basis command "`py manage.py runser`" app will run wrought the async server "`daphne`"; 
 - "`email_backend`" This options for works with user's registrations and authentification;
 - "`webpack_loader`" for a work with frontend wrought "`webpack`";
@@ -304,11 +308,13 @@ You are will see the nice image\
 
 ### Linux
 
+
 **FIles of '*.exp' and '*.sh'**\
 !['*.exp' and '*.sh'](./img/linux_pull.png)
 
 **Linux docker daphna nginx postgres**\
 ![linux_docker](./img/linux_docker.png)
+
 
 ## And More
 
@@ -319,5 +325,34 @@ Now, you can  create a new user, only and his will be record to the cache, auto.
 
 If what, i'm reade to continue working. Thanks.  
 
+[//]: # (## Middleware)
+
+[//]: # (Промежуточная функция.\)
+
+[//]: # (Запрос из клиента нам даёт "`access_token`" или "`reffresh_token`".\)
+[//]: # (Из токена мы получаем путь к пользователю, который сделал запрос на сервер.)
 
 
+## Permission
+<details close>
+<summary>Permissions for 'person'</summary>
+
+Creating the groups of  permissions bit path "'person/apps.py'" and classes "`person/permissions.py`" for distribution of rights
+```python
+groups_permissions = {
+        "BASE": ["view_driverreport"],
+        "DRIVER": ["view_driverreport", "add_driverreport", "change_driverreport"],
+        "MANAGER": ["view_driverreport", "add_driverreport", "change_driverreport"],
+        "ADMIN": [
+            "view_driverreport",
+            "add_driverreport",
+            "change_driverreport",
+            "delete_driverreport",
+        ],
+    }
+```
+
+</details>
+
+## Tests
+Testing through the 'pytest' "`__tests__/*`"

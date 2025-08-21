@@ -1,5 +1,4 @@
 """
-project/urls.py
 URL configuration for project project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:

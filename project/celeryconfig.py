@@ -1,7 +1,3 @@
-"""
-project/celeryconfig.py
-"""
-
 broker_url = "redis://83.166.245.209:6380/0"
 result_backend = "redis://83.166.245.209:6380/0"
 
