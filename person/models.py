@@ -7,7 +7,6 @@ CATEGORY_STATUS = [
     ("BASE", _("Employee")),  # Any employee which has the access only reading
     ("DRIVER", _("Truck driver")),  # Truck driver
     ("MANAGER", _("Manager")),  # Manager of logic service
-    ("CLIENT", _("Client")),  # Client of company
     ("ADMIN", _("Supervisor")),  # Admin of services
 ]
 

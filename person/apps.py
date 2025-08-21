@@ -27,7 +27,7 @@ def setup_groups(sender, **kwargs):
     groups_permissions = {
         "BASE": ["view_driverreport"],
         "DRIVER": ["view_driverreport", "add_driverreport", "change_driverreport"],
-        "MANAGER": ["view_driverreport", "change_driverreport"],
+        "MANAGER": ["view_driverreport", "add_driverreport", "change_driverreport"],
         "ADMIN": [
             "view_driverreport",
             "add_driverreport",

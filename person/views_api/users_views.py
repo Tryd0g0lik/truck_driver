@@ -117,7 +117,7 @@ class UserViews(ViewSet):
     )
     async def create(self, request: HttpRequest) -> type(Response):
         """
-        TODO: validate for the user's email need add
+        TODO: 'group_list' and code is below from 'group_list' take to the outside for Celery or the thread
         :param request:
         :return:
         """
@@ -158,7 +158,7 @@ class UserViews(ViewSet):
             response.status_code = status.HTTP_401_UNAUTHORIZED
             return response
 
-        if not user.is_authenticated and len(users_list) == 0:
+        if not user.is_authenticated and user.is_active and len(users_list) == 0:
             # Open transaction
 
             try:
@@ -429,7 +429,7 @@ class UserViews(ViewSet):
         except Exception as error:
             response.data = {"data": error.args[0]}
             return response
-        if not user.is_authenticated:
+        if not user.is_authenticated and user.is_active:
             try:
                 if not user.is_authenticated and None in response_validate:
                     # DATA IS NOT VALIDATED
@@ -442,7 +442,7 @@ class UserViews(ViewSet):
                 client = RedisOfPerson(db=1)
                 user_list: List[dict] = []
                 # 1/2 db
-                # we wee to the redis. If there, we won't find, means that we would be
+                # we see to the redis. If there, we won't find, means that we would be
                 # looking to the relational db.
                 async for key_one in iterator_get_person_cache(client):
                     # Here is a Radis
