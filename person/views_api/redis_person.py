@@ -2,6 +2,7 @@ import asyncio
 import base64
 import json
 import logging
+import re
 from typing import Dict, Union, Any
 from redis.asyncio.client import Redis
 from redis.exceptions import ConnectionError
@@ -23,6 +24,12 @@ class RedisOfPerson(Redis, Binary):
         port: int = f"{DB_TO_RADIS_PORT}",
         db: Union[str, int] = 1,
     ):
+        """
+        This is class for a work with Redis. Then your need open the access to the redis's db and done all tasks, don't forget to close the connection.
+        :param str host: Redis server host is specified in '.env' file.
+        :param str port: Redis port of server is specified in '.env' file, too.
+        :param int db: This the param has number 1, by default.
+        """
         super().__init__(host=host, port=port, db=db)
         self.client_state = None
         self.db = db
@@ -86,15 +93,17 @@ class RedisOfPerson(Redis, Binary):
         self, key: str, **kwargs: Dict[str, Union[str, int]]
     ) -> bool:
         """
-        Redis's cache
-        Session of user saving in cache's session db (Redis 0). "kwargs={'user': <Users's object >}
+        :param str key: Template is "user:< user_id >:person". This is key element, by key look up where it will be saved
+        :param dict kwargs: Redis's cache.
+        Session of user saving in cache's session db (Redis 0). "kwargs={'user': <Users's object >}".
+        HEre, in db = 0 used the object transformation to the binary data through the library 'pickle'. Then, transformation in string's type through JSON
 
-        Caching of user's db in cache's db (Redis 1). Below, it's cache's db.
+        Caching of user's db it's to the cache's db (Redis's db 1). Here, user's data presented to the dict type.
         Now will be saving on the 27 hours.
         'task_user_from_cache' task wil be to upgrade postgres at ~ am 01:00
         Timetable look the 'project.celery.app.base.Celery.conf'
-        :param str key: This is key element, by key look up where it will be saved
-        :return None
+
+        :return bool
         """
         try:
             user = kwargs.__getitem__("user")
@@ -154,9 +163,30 @@ class RedisOfPerson(Redis, Binary):
             )
             return False
 
+    async def async_del_cache_user(self, key: str) -> bool:
+        """
+
+        :param str key: Here, 'key' this is line from  the template it's 'user:< user_id>:person'
+        :return:
+        """
+        result = re.match(r"user:[0-9]+:person", key)
+        if not result:
+            raise ValueError(
+                "%s is not a valid key: '%s'"
+                % (
+                    RedisOfPerson.__class__.__name__
+                    + "."
+                    + self.async_del_cache_user.__name__,
+                    key,
+                )
+            )
+        await self.delete(key)
+
+        return True
+
     async def async_basis_collection(self, user_id: int) -> dict[str, Any]:
         """
-        Here, woas collected the code which ofter we could meet in ti the operation by the data update to Redis. It's by 'person'.
+        Here, woas collected the code which ofter we could meet in to the operation by the data update to Redis. It's by 'person'.
         :param int user_id: user's index,
         :return: dict/json string. This is an image of user.
         """
