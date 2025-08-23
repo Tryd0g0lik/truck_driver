@@ -155,6 +155,7 @@ class RedisOfPerson(Redis, Binary):
                     "%s: ERROR => %s"
                     % (
                         RedisOfPerson.__class__.__name__
+                        + "."
                         + self.async_set_cache_user.__name__,
                         error.args[0],
                     )
