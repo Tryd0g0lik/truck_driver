@@ -5,7 +5,7 @@ import logging
 import asyncio
 import re
 from datetime import datetime
-
+from http.client import responses
 
 from typing import List
 
@@ -22,6 +22,7 @@ from django.contrib.auth.models import Group
 from person.apps import signal_user_registered
 from person.cookies import Cookies
 from person.interfaces import U
+from person.permissions import IsAll, IsManipulate, IsReader
 from person.tasks.task_cache_hew_user import task_postman_for_user_id
 from person.models import Users
 from person.hasher import Hasher
@@ -165,6 +166,16 @@ class UserViews(ViewSet):
                 },
             ),
         },
+        manual_parameters=[
+            openapi.Parameter(
+                required=True,
+                name="AccessToken",
+                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+                in_=openapi.IN_HEADER,
+                description="This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
     )
     async def list(self, request: HttpRequest) -> HttpResponse:
         """
@@ -243,7 +254,15 @@ class UserViews(ViewSet):
                 type=openapi.TYPE_INTEGER,
                 example=54,
                 format=openapi.FORMAT_INT64,
-            )
+            ),
+            openapi.Parameter(
+                required=True,
+                name="AccessToken",
+                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+                in_=openapi.IN_HEADER,
+                description="This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
+                type=openapi.TYPE_STRING,
+            ),
         ],
         responses={
             200: openapi.Response(
@@ -342,7 +361,7 @@ class UserViews(ViewSet):
             500: "Internal server error",
         },
     )
-    async def retrieve(self, request: HttpRequest, pk: str) -> HttpResponse:
+    async def retrieve(self, request: HttpRequest, pk: str = None) -> HttpResponse:
         """
         :param request:
         :param int pk: User index (it's parameter from the url path) for what retrieve data single user (index which is pk)
@@ -371,13 +390,19 @@ class UserViews(ViewSet):
         ```
         """
         user: U | AnonymousUser = request.user
-        if (
-            pk
-            and user.__getattribute__("is_active")
-            and (
-                user.__getattribute__("is_staff")
-                or user.__getattribute__("id") == int(pk)
+        log.info(
+            (
+                "%s: USERNAME: %s, PK: %s"
+                % (
+                    UserViews.__class__.__name__ + "." + self.retrieve.__name__,
+                    request.user.username,
+                    pk,
+                )
             )
+        )
+        if pk and (
+            await sync_for_async(IsAll().has_permission, request)
+            or user.__getattribute__("id") == int(pk)
         ):
             try:
                 users_list = [view async for view in Users.objects.filter(pk=int(pk))]
@@ -386,8 +411,11 @@ class UserViews(ViewSet):
                         {"data": "'pk' is invalid"}, status=status.HTTP_401_UNAUTHORIZED
                     )
                     # Get - data
-                serializer = await sync_for_async(AsyncUsersSerializer, user)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                serializer = AsyncUsersSerializer(user)
+                return Response(
+                    await sync_for_async(lambda: serializer.data),
+                    status=status.HTTP_200_OK,
+                )
             except Exception as error:
                 return Response(
                     {"data": error.args.__getitem__(0)},
@@ -779,7 +807,7 @@ class UserViews(ViewSet):
                 async for key_one in iterator_get_person_cache(client):
                     # Here is a Radis
                     b_caches_user = await client.get(key_one)
-                    caches_user = json.loads(b_caches_user.decode())
+                    caches_user = json.loads(b_caches_user.decode("utf-8"))
                     # check username
                     if (
                         caches_user
@@ -863,7 +891,7 @@ class UserViews(ViewSet):
                 b = Binary()
                 session_key_user_str: str = b.str_to_binary(
                     f"user:{user.__getattribute__('id')}:session"
-                ).decode()
+                ).decode("utf-8")
                 coockie = Cookies(session_key_user_str, response)
                 response: HttpResponse = coockie.session_user()
             except Exception as error:
@@ -905,7 +933,7 @@ class UserViews(ViewSet):
                     access_base64_binary = access_binary.object_to_binary(
                         item.access_token
                     )
-                    return base64.b64encode(access_base64_binary).decode()
+                    return base64.b64encode(access_base64_binary).decode("utf-8")
 
                 """RUN TASKS: access & refresh token base64 & user properties"""
                 result_list = await asyncio.gather(
@@ -951,6 +979,93 @@ class UserViews(ViewSet):
                 )
 
         response.data = {"data": "User have was activated before"}
+        return response
+
+    @swagger_auto_schema(
+        operation_description="""
+                    Method: PATCH and the fixed pathname of url
+                    Example PATHNAME: "/api/auth/person/<str:pk>/inactive/"
+
+                    """,
+        responses={
+            200: "user was inactivated",
+            401: "Some wink what wron/ Check you data",
+            400: "Bad request",
+            500: "Internal server error",
+        },
+        tags=["person"],
+        manual_parameters=[
+            openapi.Parameter(
+                # https://drf-yasg.readthedocs.io/en/stable/custom_spec.html?highlight=properties
+                name="X-CSRFToken",
+                title="X-CSRFToken",
+                in_=openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+            )
+        ],
+    )
+    async def inactive(
+        self, request: HttpRequest, pk: str = None, **kwargs
+    ) -> HttpResponse:
+        from person.tasks.task_user_is_login import task_user_login
+
+        user = request.user
+        response = Response(status=status.HTTP_401_UNAUTHORIZED)
+        if user.is_active and pk and user.id == int(pk):
+
+            async def person_inactive(pk: str):
+                client_person = RedisOfPerson(db=1)
+                async for key_one in iterator_get_person_cache(client_person):
+                    # Here is a Radis
+                    try:
+                        b_caches_user = await client_person.get(key_one)
+                        caches_user = json.loads(b_caches_user.decode("utf-8"))
+                        # check username
+                        if caches_user and isinstance(caches_user, dict):
+                            # We do actively for user when found his to the cache.
+
+                            caches_user["is_active"] = False
+                            await client_person.aclose()
+                            break
+                    except Exception as error:
+                        raise error
+
+            async def session_closing(pk: str):
+                """
+                HEre, delete the  'user:< pk:str >:session'
+                :param pk:
+                :return:
+                """
+                client_session = RedisOfPerson(db=0)
+                try:
+                    await client_session.async_del_cache_user(f"user:{pk}:session")
+                    await client_session.aclose()
+
+                except Exception as error:
+                    raise error
+
+            try:
+                # Removing from Redis db 1
+                task_person_inactive = asyncio.create_task(person_inactive(pk))
+                # REmoving from Redis db 2
+                task_session_closing = asyncio.create_task(session_closing(pk))
+
+                await asyncio.gather(task_person_inactive, task_session_closing)
+
+            except Exception as error:
+                response.data = {"data": "ERROR => %s" % error.args[0]}
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return response
+
+            # Then
+            response.data = {"data": "User have was inactive"}
+            response.status_code = status.HTTP_200_OK
+            return response
+
+        response.data = {
+            "data": "User was inactive before or something what wrong in the request"
+        }
         return response
 
     @staticmethod

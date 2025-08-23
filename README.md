@@ -272,9 +272,15 @@ Now, email's message we can see only inside of console or truck_driver doker's l
 
 ----
 ## OpenAPI
+- '`GET`' "`{{url_basis}}/api/auth/person/`" - Get the list of records from the person db and for user admin 
+- '`GET`' "`{{url_basis}}/api/auth/person/<str:pk>/`" - Get the one/single records from the person 
 - '`POST`' "`{{url_basis}}/api/auth/person/`" - User registration.\
 For filling out the blank/form, for us need the Truck Driver. Above, API for registration. And, no more. :-( I didn't make it for 16 hours.\
 But, we have and [Fron path](https://github.com/Tryd0g0lik/truck_driver_front).
+- '`GET`' "`{{url_basis}}/activate/< referral_token >/`" - reference from the user's letter by level the registration and authentification.
+- '`POST`' "`{{url_basis}}/api/auth/person/0/active/`" - User activation
+- '`PATCH`' "`{{url_basis}}/api/auth/person/83/inactive/`" - User inactive
+- '`GET`' "`{{url_basis}}/api/auth/csrftoken/`" - Get csrf-token into the cookie
 
 ### Swagger
 **Example of redoc**\

@@ -1,8 +1,10 @@
+import threading
 import base64
 import logging
 import asyncio
 from django.http import HttpRequest
 from django.contrib.auth.models import AnonymousUser
+from requests.packages import target
 
 from person.binaries import Binary
 from person.models import Users
@@ -10,6 +12,7 @@ from person.views_api.redis_person import RedisOfPerson
 
 
 from logs import configure_logging
+
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
@@ -23,30 +26,39 @@ class RedisAuthMiddleware:
         self.client = None
         self.user_key = ""
 
-    async def async_get_user(self, session_key: str) -> AnonymousUser | Users:
+    async def async_get_user(
+        self, request: HttpRequest, session_key: str
+    ) -> AnonymousUser | Users:
 
         self.client = RedisOfPerson(db=0)
         try:
             b = Binary()
-            binary_to_str = b.binary_to_str
-            b_session_key = binary_to_str(session_key)
-            await self.client.async_has_key(b_session_key)
-            if not await self.client.async_has_key(b_session_key):
+
+            b_session_key = b.binary_to_str(session_key)
+            user_obj = b.binary_to_object(b_session_key)
+
+            redis_key = f"user:{user_obj["user_id"]}:session"
+            redis_key_bool = await self.client.async_has_key(redis_key)
+            if not redis_key_bool:
                 return AnonymousUser()
-            session_data = await self.client.async_get_cache_user(b_session_key)
+            session_data = await self.client.async_get_cache_user(redis_key)
             b = Binary()
             user_obj = b.binary_to_object(
                 base64.b64decode(session_data.__getitem__("b_user"))
             )
-            return user_obj
+            if user_obj and not isinstance(user_obj, AnonymousUser):
+                request.user = user_obj
+                request.user.is_active = True
 
+            return user_obj
         except ValueError as error:
             log.error(
                 "%s: ERROR => %s"
                 % (
                     RedisAuthMiddleware.__class__.__name__
+                    + "."
                     + self.async_get_user.__name__,
-                    error,
+                    error.args[0],
                 )
             )
             return AnonymousUser()
@@ -61,14 +73,22 @@ class RedisAuthMiddleware:
         :return:
         """
         try:
+            log.info(
+                "%s: SESSION_KEY 'session_user': %s"
+                % (
+                    RedisAuthMiddleware.__class__.__name__
+                    + "."
+                    + self.async_get_user.__name__,
+                    request.COOKIES.get("session_user"),
+                )
+            )
             if request.COOKIES and request.COOKIES.get("session_user"):
                 if not hasattr(request, "user"):
                     request.user = AnonymousUser()
                 session_key = request.COOKIES["session_user"]
-                user = asyncio.run(self.async_get_user(session_key))
-                if user and not isinstance(user, AnonymousUser):
-                    request.user = user
-                    request.user.is_active = True
+                # self.async_get_user(session_key)
+                asyncio.run(self.async_get_user(request, session_key))
+
         except Exception as error:
             log.error(
                 "%s: %s"
@@ -79,4 +99,5 @@ class RedisAuthMiddleware:
             )
 
         response = self.get_response(request)
+
         return response

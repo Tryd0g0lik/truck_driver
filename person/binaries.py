@@ -17,7 +17,7 @@ class Binary:
     def binary_to_str(self, binary_str) -> str:
         """Transformation the base64's line to the  basis line"""
         try:
-            decoded_bytes = base64.b64decode(binary_str).decode("utf-8")
+            decoded_bytes = base64.b64decode(binary_str)
             return decoded_bytes
         except (UnicodeDecodeError, base64.binascii.Error) as error:
             raise ValueError(f"Error decode: {error}")

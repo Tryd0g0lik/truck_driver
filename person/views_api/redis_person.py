@@ -187,7 +187,12 @@ class RedisOfPerson(Redis, Binary):
         :param str key: Here, 'key' this is line from  the template it's 'user:< user_id>:person'
         :return:
         """
-        result = re.match(r"user:[0-9]+:person", key)
+
+        result = (
+            re.match(r"user:[0-9]+:person", key)
+            if self.db == 1
+            else re.match(r"user:[0-9]+:session", key)
+        )
         if not result:
             raise ValueError(
                 "%s is not a valid key: '%s'"
