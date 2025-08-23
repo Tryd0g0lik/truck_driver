@@ -1,9 +1,12 @@
 import pytest
 import logging
+
+from django.http import HttpRequest
+
 from logs import configure_logging
 from person.models import Users
 from project.service import sync_for_async
-from rest_framework.response import Response
+from django.contrib.sessions.middleware import SessionMiddleware
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
@@ -35,5 +38,26 @@ def fix_get_user_of_db():
             "%s: FINALLY. LEN of 'filter_list': %s"
             % (fix_get_user_of_db.__name__, len(filter_list))
         )
+
+    return factory
+
+
+@pytest.fixture()
+def fix_del_user_of_db():
+    async def factory():
+        [await view.adelete() async for view in Users.objects.all()]
+
+    return factory
+
+
+@pytest.fixture
+def fix_get_session():
+    async def factory(request: HttpRequest) -> HttpRequest:
+        # CREATE AND ADDING a SESSION
+        middleware = SessionMiddleware(lambda req: None)
+        middleware.process_request(request)
+        request_is_saving = request.session.save
+        await sync_for_async(request_is_saving)
+        return request
 
     return factory

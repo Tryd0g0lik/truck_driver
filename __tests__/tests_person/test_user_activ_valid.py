@@ -2,42 +2,51 @@
 __tests__/tests_person/test_user_activ_valid.py
 """
 
+import asyncio
 import json
-
 import pytest
 import logging
-
-from blib2to3.pgen2.token import AWAIT
-
-from __tests__.__fixtures__.fix import fix_clear_db, fix_get_user_of_db
+from __tests__.__fixtures__.fix import (
+    fix_get_user_of_db,
+    fix_del_user_of_db,
+    fix_get_session,
+)
 from logs import configure_logging
 from rest_framework.test import APIRequestFactory
 
 from django.contrib.auth.models import AnonymousUser
 
-from project.service import sync_for_async
+from person.views_api.redis_person import RedisOfPerson
 from project.views import CSRFTokenView
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
 
 
+# Note: Email is the field not necessarily
 @pytest.mark.parametrize(
     "username, email, password, category, expected",
     [
         ("Serge", "serge@his.com", "123456789", "BASE", True),
         (" Serge_01 ", "serge@his.com", "123456%789", "BASE", True),
         (" Serge_03 ", "serge@his.com", "1234567dsq89", "BASE", True),
+        (" Serge_04", "", "1234567dsq89", "BASE", True),
         ("Serge_02", "serge@his.com", "123456789", "BASE", True),
     ],
 )
 @pytest.mark.persone_active_valid
 @pytest.mark.django_db
 async def test_persone_active_valid(
-    fix_clear_db, fix_get_user_of_db, username, email, password, category, expected
+    fix_get_user_of_db,
+    fix_del_user_of_db,
+    fix_get_session,
+    username,
+    email,
+    password,
+    category,
+    expected,
 ):
     from person.views_api.users_views import UserViews
-    from django.contrib.sessions.middleware import SessionMiddleware
 
     log.info(
         "%s: START TEST WHERE 'username': %s & 'email': %s & 'password': %s & 'category': %s & 'expecteD': %s"
@@ -63,25 +72,12 @@ async def test_persone_active_valid(
             "category": category,
         },
     )
-    email = request.data.__getitem__("email")
-    log.info(
-        "%s:REGISTRATE - GET REQUEST.data['email'] %s"
-        % (test_persone_active_valid.__name__, email)
-    )
-    # csrf = await CSRFTokenView().get(request)
-    # request.headers.__setattr__("Set-Cookie", csrf)
-    log.info(
-        "%s: REGISTRATE - GET REQUEST" % test_persone_active_valid.__name__,
-    )
-
     await UserViews().create(request)
     log.info(
         "%s: REGISTRATE - COMPLETED a REGISTRATION" % test_persone_active_valid.__name__
     )
+    # CHECK THE QUANTITY OF LINES (see to the log file)
     await fix_get_user_of_db()
-    log.info(
-        "%s: ACTIVE - GET FACTORY" % test_persone_active_valid.__name__,
-    )
 
     # get the csrf-token
     request = factory.get("auth/csrftoken/")
@@ -90,21 +86,13 @@ async def test_persone_active_valid(
         "%s: ACTIVE - 'csrf_response': %s"
         % (test_persone_active_valid.__name__, str(csrf_response.__dict__))
     )
-    log.info(
-        "%s: AFTER, GET CSRF: %s "
-        % (
-            test_persone_active_valid.__name__,
-            json.loads(csrf_response.content.decode()).__getitem__("csrfToken"),
-        )
-    )
-
+    # CREATING THE REQUEST FOR USER's ACTIVATION
     request = factory.post("/person/0/active/", content_type="application/json")
     request.__setattr__("user", AnonymousUser())
     request.headers.__setattr__(
         "Set-Cookie",
         json.loads(csrf_response.content.decode()).__getitem__("csrfToken"),
     )
-    # request.user.__setattr__("is_active", True)
     request.__setattr__(
         "data",
         {
@@ -112,39 +100,43 @@ async def test_persone_active_valid(
             "password": password,
         },
     )
-    # ADDING a SESSION
-    middleware = SessionMiddleware(lambda req: None)
-    middleware.process_request(request)
-    request_is_saving = request.session.save
-    await sync_for_async(request_is_saving)
-
+    # CREATE AND ADDING a SESSION FOR USER's ACTIVATION
+    request = await fix_get_session(request)
+    # THIS REQUEST TO THE SERVER for getting the activation's tokens and the data properties of user
     response = await UserViews().active(request, kwargs=request.body)
     log.info(
         "%s: RECEIVED THE RESPONSE: %s"
         % (test_persone_active_valid.__name__, str(response.__dict__))
     )
-    log.info(
-        "%s: ACTIVE - GET 'user_factory'" % test_persone_active_valid.__name__,
-    )
-    log.info(
-        "%s: ACTIVE - GET 'status_code': %s"
-        % (test_persone_active_valid.__name__, response.status_code)
-    )
+
+    # CHECK THA STATUS CODE
     res_bool = True if response.status_code < 400 else False
     log.info(
         "%s: ACTIVE - GET 'res_bool': %s"
         % (test_persone_active_valid.__name__, res_bool)
     )
-    # await clear_db() if res_bool == expected else None
+
     assert res_bool == expected
     log.info(
         "%s: ACTIVE - RESPONSE 'res_bool': %s"
         % (test_persone_active_valid.__name__, res_bool)
     )
-    # await clear_db() if response.data["data"].lower() == "Ok".lower() else None
+    # CHECK = WHAT CONTAINING IN RESPONSE
+    data_of_response = json.loads(response.content.decode()).__getitem__("data")
     result_bool = (
-        (True if "user" in response.data["data"][0].keys() else False)
-        if type(response.data["data"]) == list and len(response.data["data"]) > 0
+        (True if "user" in data_of_response[0].keys() else False)
+        if type(data_of_response) == list and len(data_of_response) > 0
         else False
     )
     assert result_bool == expected
+
+    async def clean_redis():
+        client = RedisOfPerson(db=1)
+        for i in range(0, 10):
+            await client.delete(f"user:{i}:person")
+
+    task_clean_redis_1 = asyncio.create_task(clean_redis())
+    task_clean_relation_db = asyncio.create_task(fix_del_user_of_db())
+
+    # CLEANING IN DB
+    await asyncio.gather(task_clean_redis_1, task_clean_relation_db)
