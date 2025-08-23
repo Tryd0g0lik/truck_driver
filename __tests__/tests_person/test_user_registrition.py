@@ -6,7 +6,7 @@ import pytest
 import logging
 from rest_framework.test import APIRequestFactory
 from django.contrib.auth.models import AnonymousUser
-from __tests__.__fixtures__.fix import fix_clear_db, fix_get_user_of_db
+from __tests__.__fixtures__.fix import fix_get_user_of_db
 from logs import configure_logging
 from project.views import CSRFTokenView
 
@@ -26,12 +26,10 @@ configure_logging(logging.INFO)
 @pytest.mark.person_creat_valid
 @pytest.mark.django_db
 async def test_person_valid(
-    fix_clear_db, fix_get_user_of_db, username, email, password, category, expected
+    fix_get_user_of_db, username, email, password, category, expected
 ) -> None:
     from person.views_api.users_views import UserViews
 
-    # Here , we clear of db
-    # await fix_clear_db()
     log.info(
         "%s: START TEST WHERE 'username': %s & 'email': %s & 'password': %s & 'category': %s & 'expecteD': %s"
         % (
