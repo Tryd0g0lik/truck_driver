@@ -4,12 +4,10 @@ __tests__/tests_person/test_user_registrition.py
 
 import pytest
 import logging
+from rest_framework.test import APIRequestFactory
+from django.contrib.auth.models import AnonymousUser
 from __tests__.__fixtures__.fix import fix_clear_db, fix_get_user_of_db
 from logs import configure_logging
-from rest_framework.test import APIRequestFactory
-
-from django.contrib.auth.models import AnonymousUser
-
 from project.views import CSRFTokenView
 
 log = logging.getLogger(__name__)
@@ -51,7 +49,7 @@ async def test_person_valid(
     )
     request = fuctory.post("/person/", content_type="application/json")
     request.__setattr__("user", AnonymousUser())
-    request.user.__setattr__("is_active", True)
+    request.user.__setattr__("is_active", False)
     request.__setattr__(
         "data",
         {
@@ -63,11 +61,11 @@ async def test_person_valid(
     )
     email = request.data.__getitem__("email")
     log.info("%s: GET REQUEST.data['email'] %s" % (test_person_valid.__name__, email))
-    csrf = await CSRFTokenView().get(request)
-    request.headers.__setattr__("Set-Cookie", csrf)
-    log.info(
-        "%s: GET REQUEST" % test_person_valid.__name__,
-    )
+    # csrf = await CSRFTokenView().get(request)
+    # request.headers.__setattr__("Set-Cookie", csrf)
+    # log.info(
+    #     "%s: GET REQUEST" % test_person_valid.__name__,
+    # )
 
     response = await UserViews().create(request)
 

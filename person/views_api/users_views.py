@@ -12,7 +12,8 @@ from typing import List
 from django.shortcuts import get_object_or_404
 from kombu.exceptions import OperationalError
 from django.contrib.auth import login as login_user
-from django.db import connections, transaction
+from django.contrib.auth.models import AnonymousUser
+from django.db import connections
 from django.http import JsonResponse, HttpRequest, HttpResponse
 from rest_framework.response import Response
 from rest_framework import serializers, status
@@ -121,7 +122,10 @@ class UserViews(ViewSet):
         :param request:
         :return:
         """
-        user = request.user
+        print("--------- 01", request.__dict__)
+        user = request.user if request.user else AnonymousUser()
+
+        print("--------- 02", user.__dict__)
         data = request.data
         try:
             # Validators
@@ -172,7 +176,7 @@ class UserViews(ViewSet):
             response.status_code = status.HTTP_401_UNAUTHORIZED
             return response
 
-        if not user.is_authenticated and user.is_active and len(users_list) == 0:
+        if not user.is_authenticated and not user.is_active and len(users_list) == 0:
             # Open transaction
 
             try:
@@ -431,7 +435,7 @@ class UserViews(ViewSet):
     async def active(self, request: HttpRequest, pk=0, **kwargs) -> HttpResponse:
         from person.tasks.task_user_is_login import task_user_login
 
-        user = request.user
+        user = request.user if request.user else AnonymousUser()
         data = request.data
         # Validate of data
         response = Response(status=status.HTTP_401_UNAUTHORIZED)
@@ -446,7 +450,7 @@ class UserViews(ViewSet):
         except Exception as error:
             response.data = {"data": error.args[0]}
             return response
-        if not user.is_authenticated and user.is_active:
+        if not user.is_authenticated and not user.is_active:
             try:
                 if not user.is_authenticated and None in response_validate:
                     # DATA IS NOT VALIDATED
@@ -494,6 +498,13 @@ class UserViews(ViewSet):
                     response.status_code = status.HTTP_404_NOT_FOUND
                     return response
             except Exception as error:
+                log.error(
+                    "%s: ERROR => %s"
+                    % (
+                        UserViews.__class__.__name__ + "." + self.active.__name__,
+                        error.args[0],
+                    )
+                )
                 # SERVER HAS ERROR
                 response.data = {"data": error.args[0]}
                 response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -542,6 +553,13 @@ class UserViews(ViewSet):
                 coockie = Cookies(session_key_user_str, response)
                 response: HttpResponse = coockie.session_user()
             except Exception as error:
+                log.error(
+                    "%s: ERROR => %s"
+                    % (
+                        UserViews.__class__.__name__ + "." + self.active.__name__,
+                        error.args[0],
+                    )
+                )
                 log.error(
                     "%s: CACHE OF USER is invalid. ERROR => %s"
                     % (UserViews.__class__.__name__ + self.login.__name__, error)
@@ -606,6 +624,13 @@ class UserViews(ViewSet):
                 JsonResponse.cookies = response.cookies
                 return JsonResponse(data=data, safe=False, status=status.HTTP_200_OK)
             except Exception as error:
+                log.error(
+                    "%s: ERROR => %s"
+                    % (
+                        UserViews.__class__.__name__ + "." + self.active.__name__,
+                        error.args[0],
+                    )
+                )
                 return Response(
                     {"data": error.args.__getitem__(0)},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -668,16 +693,29 @@ class UserViews(ViewSet):
         """
         db_numb: int = kwargs.__getitem__("db")
         client = RedisOfPerson(db=db_numb)
-        if not client.ping():
+        ping = await client.ping()
+        if not ping:
             return False
         try:
             kwargs = {"user": kwargs.__getitem__("user")}
+            log.info(
+                "%s: Prepared the 'kwargs': %s, KEY: %s"
+                % (
+                    UserViews.__class__.__name__ + "." + UserViews.active.__name__,
+                    kwargs,
+                    key,
+                )
+            )
             await client.async_set_cache_user(key=key, **kwargs)
+            log.info(
+                "%s: Prepared the 'client.async_set_cache_user'"
+                % (UserViews.__class__.__name__ + "." + UserViews.active.__name__)
+            )
             return True
         except Exception as error:
             log.error(
                 "%s: CACHE OF USER is invalid. ERROR => %s"
-                % (UserViews.__class__.__name__ + UserViews.login.__name__, error)
+                % (UserViews.__class__.__name__ + UserViews.active.__name__, error)
             )
             return False
         finally:

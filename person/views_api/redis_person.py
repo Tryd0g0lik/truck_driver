@@ -112,11 +112,20 @@ class RedisOfPerson(Redis, Binary):
                 User's object save in cache's session (Redis 0)
                 """
                 result = AsyncUsersSerializer(user)
-                result = await sync_for_async((lambda: result.data))
+                result = await sync_for_async(lambda: result.data)
                 b_user = (
                     base64.b64encode(self.object_to_binary(user))
                     if self.db == 0
                     else json.dumps(result).encode()
+                )
+                log.info(
+                    "%s: 'b_user': %s "
+                    % (
+                        RedisOfPerson.__class__.__name__
+                        + "."
+                        + self.async_set_cache_user.__name__,
+                        b_user,
+                    )
                 )
                 result_str: str = (
                     b_user.decode(
@@ -130,6 +139,14 @@ class RedisOfPerson(Redis, Binary):
                 )
 
                 await self.set(key, value=result_str)
+                log.info(
+                    "%s: WAS SAVED "
+                    % (
+                        RedisOfPerson.__class__.__name__
+                        + "."
+                        + self.async_set_cache_user.__name__
+                    )
+                )
                 return True
 
         except Exception as error:
