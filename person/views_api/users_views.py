@@ -5,7 +5,7 @@ import logging
 import asyncio
 import re
 from datetime import datetime
-
+from http.client import responses
 
 from typing import List
 
@@ -22,6 +22,7 @@ from django.contrib.auth.models import Group
 from person.apps import signal_user_registered
 from person.cookies import Cookies
 from person.interfaces import U
+from person.permissions import IsAll, IsManipulate, IsReader
 from person.tasks.task_cache_hew_user import task_postman_for_user_id
 from person.models import Users
 from person.hasher import Hasher
@@ -82,6 +83,347 @@ async def iterator_get_person_cache(client: type(RedisOfPerson)):
 
 
 class UserViews(ViewSet):
+    @swagger_auto_schema(
+        operation_description="""
+            User admin can get all users list.
+            Permissions if you is superuser.
+            """,
+        tags=["person"],
+        responses={
+            200: openapi.Response(
+                description="Users array",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            "id": openapi.Schema(type=openapi.TYPE_INTEGER, example=12),
+                            "username": openapi.Schema(
+                                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+                                type=openapi.TYPE_STRING,
+                            ),
+                            "first_name": openapi.Schema(
+                                type=openapi.TYPE_STRING, example=""
+                            ),
+                            "last_name": openapi.Schema(
+                                type=openapi.TYPE_STRING, example=""
+                            ),
+                            "last_login": openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                example="2025-07-20 00:39:14.739 +0700",
+                            ),
+                            "is_superuser": openapi.Schema(
+                                type=openapi.TYPE_BOOLEAN,
+                                example=False,
+                            ),
+                            "is_staff": openapi.Schema(
+                                type=openapi.TYPE_BOOLEAN,
+                                example=False,
+                                description="user got permissions how superuser or not.",
+                            ),
+                            "is_active": openapi.Schema(
+                                type=openapi.TYPE_BOOLEAN,
+                                example=False,
+                            ),
+                            "date_joined": openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                example="2025-07-20 00:39:14.739 +0700",
+                            ),
+                            "created_at": openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                example="2025-07-20 00:39:14.739 +0700",
+                            ),
+                            "balance": openapi.Schema(
+                                type=openapi.TYPE_NUMBER, example="12587.268"
+                            ),
+                            "verification_code": openapi.Schema(
+                                type=openapi.TYPE_STRING,
+                                example="_null_jOePj2i769OQ4XsFPihlA....",
+                                description="""
+                                '<username>_null_jOePj2i769OQ4XsFPihlA....'
+                                This is a code from  referral link.
+                                """,
+                            ),
+                            "is_sent": openapi.Schema(
+                                type=openapi.TYPE_BOOLEAN,
+                                example=True,
+                                description="""
+                                Referral link was sent by user email address.
+                                """,
+                            ),
+                        },
+                    ),
+                ),
+            ),
+            401: "User admin is invalid",
+            500: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                title="Mistake",
+                properties={
+                    "data": openapi.Schema(
+                        type=openapi.TYPE_STRING,
+                    )
+                },
+            ),
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                required=True,
+                name="AccessToken",
+                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+                in_=openapi.IN_HEADER,
+                description="This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+    )
+    async def list(self, request: HttpRequest) -> HttpResponse:
+        """
+        Superuser can get the users array of data.
+        :param request:
+        :return:
+        ```js
+            [
+                {
+                    "id": 46,
+                    "last_login": "2025-07-20T11:23:13.016496+07:00",
+                    "is_superuser": false,
+                    "username": "Sergey",
+                    "first_name": "",
+                    "last_name": "",
+                    "email": "work80@mail.ru",
+                    "is_staff": true,
+                    "is_active": true,
+                    "date_joined": "2025-07-19T12:56:26.340392+07:00",
+                    "is_sent": true,
+                    "is_verified": true,
+                    "verification_code": "_null_jOePj2i769OQ4XsFPihlAVpH6RGN_idjsycxU6-WfRo",
+                    "balance": 0,
+                    "created_at": "2025-07-19T11:34:32.928150+07:00",
+                    "updated_at": "2025-07-20T11:23:13.016496+07:00"
+                },
+                {
+                    "id": 47,
+                    "last_login": "2025-07-20T11:09:29.910079+07:00",
+                    "is_superuser": false,
+                    "username": "Denis",
+                    "first_name": "",
+                    "last_name": "",
+                    "email": "work80@mail.ru",
+                    "is_staff": false,
+                    "is_active": true,
+                    "date_joined": "2025-07-20T11:09:29.460076+07:00",
+                    "is_sent": true,
+                    "is_verified": true,
+                    "verification_code": "_null_jOePj2i769OQ4XsFPihlAVpH6RGN_idjsycxU6-WfRo",
+                    "balance": 0,
+                    "created_at": "2025-07-20T10:57:47.979716+07:00",
+                    "updated_at": "2025-07-20T11:09:30.390933+07:00"
+                }
+            ]
+        ```
+        """
+        user: U | AnonymousUser = request.user
+        if user.is_active and user.is_staff:
+            try:
+                queryset_list = [views async for views in Users.objects.all()]
+                serializer = await sync_for_async(
+                    AsyncUsersSerializer, queryset_list, many=True
+                )
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except Exception as error:
+                return Response(
+                    {"data": error.args}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        return Response(
+            {"data": "User admin is invalid"}, status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    @swagger_auto_schema(
+        operation_description=""""
+                    You can gat data if you is the superuser or
+                     index (it's parameter from the url path) for what retrieve data single user (if user index is pk).
+
+                """,
+        tags=["person"],
+        manual_parameters=[
+            openapi.Parameter(
+                name="id",
+                title="pk",
+                in_=openapi.IN_PATH,
+                type=openapi.TYPE_INTEGER,
+                example=54,
+                format=openapi.FORMAT_INT64,
+            ),
+            openapi.Parameter(
+                required=True,
+                name="AccessToken",
+                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+                in_=openapi.IN_HEADER,
+                description="This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                description="User data: access & refresh the tokens.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "data": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                allOf=[
+                                    openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "user": openapi.Schema(
+                                                type=openapi.TYPE_OBJECT,
+                                                properties={
+                                                    # Здесь добавьте свойства пользователя,
+                                                    # аналогично вашему первому примеру
+                                                    "id": openapi.Schema(
+                                                        type=openapi.TYPE_INTEGER,
+                                                        format=openapi.FORMAT_INT64,
+                                                        example=123,
+                                                    ),
+                                                    "username": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="Serge",
+                                                    ),
+                                                    "last_login": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "first_name": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="",
+                                                    ),
+                                                    "email": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_EMAIL,
+                                                    ),
+                                                    "is_staff": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "is_active": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "date_joined": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "created_at": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "updated_at": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "category": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="DRIVER",
+                                                    ),
+                                                    "password": openapi.Schema(
+                                                        type=openapi.TYPE_STRING
+                                                    ),
+                                                    "is_sent": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "is_verified": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "verification_code": openapi.Schema(
+                                                        type=openapi.TYPE_STRING
+                                                    ),
+                                                    "balamce": openapi.Schema(
+                                                        type=openapi.TYPE_NUMBER,
+                                                        format=openapi.FORMAT_INT64,
+                                                    ),
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                ],
+                            ),
+                        )
+                    },
+                ),
+            ),
+            401: "Some wink what wrong/ Check you data",
+            400: "Bad request",
+            500: "Internal server error",
+        },
+    )
+    async def retrieve(self, request: HttpRequest, pk: str = None) -> HttpResponse:
+        """
+        :param request:
+        :param int pk: User index (it's parameter from the url path) for what retrieve data single user (index which is pk)
+        :return:
+        ```js
+            [
+                {
+                    "id": 46,
+                    "last_login": "2025-07-20T11:23:13.016496+07:00",
+                    "is_superuser": false,
+                    "username": "Sergey",
+                    "first_name": "",
+                    "last_name": "",
+                    "email": "work80@mail.ru",
+                    "is_staff": true,
+                    "is_active": true,
+                    "date_joined": "2025-07-19T12:56:26.340392+07:00",
+                    "is_sent": true,
+                    "is_verified": true,
+                    "verification_code": "_null_jOePj2i769OQ4XsFPihlAVpH6RGN_idjsycxU6-WfRo",
+                    "balance": 0,
+                    "created_at": "2025-07-19T11:34:32.928150+07:00",
+                    "updated_at": "2025-07-20T11:23:13.016496+07:00"
+                }
+            ]
+        ```
+        """
+        user: U | AnonymousUser = request.user
+        log.info(
+            (
+                "%s: USERNAME: %s, PK: %s"
+                % (
+                    UserViews.__class__.__name__ + "." + self.retrieve.__name__,
+                    request.user.username,
+                    pk,
+                )
+            )
+        )
+        if pk and (
+            await sync_for_async(IsAll().has_permission, request)
+            or user.__getattribute__("id") == int(pk)
+        ):
+            try:
+                users_list = [view async for view in Users.objects.filter(pk=int(pk))]
+                if len(users_list) == 0:
+                    Response(
+                        {"data": "'pk' is invalid"}, status=status.HTTP_401_UNAUTHORIZED
+                    )
+                    # Get - data
+                serializer = AsyncUsersSerializer(user)
+                return Response(
+                    await sync_for_async(lambda: serializer.data),
+                    status=status.HTTP_200_OK,
+                )
+            except Exception as error:
+                return Response(
+                    {"data": error.args.__getitem__(0)},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+        return Response(
+            {"data": "User or 'pk' is invalid"}, status=status.HTTP_401_UNAUTHORIZED
+        )
 
     @swagger_auto_schema(
         operation_description="""
@@ -122,10 +464,7 @@ class UserViews(ViewSet):
         :param request:
         :return:
         """
-        print("--------- 01", request.__dict__)
         user = request.user if request.user else AnonymousUser()
-
-        print("--------- 02", user.__dict__)
         data = request.data
         try:
             # Validators
@@ -468,7 +807,7 @@ class UserViews(ViewSet):
                 async for key_one in iterator_get_person_cache(client):
                     # Here is a Radis
                     b_caches_user = await client.get(key_one)
-                    caches_user = json.loads(b_caches_user.decode())
+                    caches_user = json.loads(b_caches_user.decode("utf-8"))
                     # check username
                     if (
                         caches_user
@@ -535,7 +874,10 @@ class UserViews(ViewSet):
                 request.user = user
                 await asyncio.to_thread(login_user, request, user=user)
 
-            kwargs.__setitem__("db", 0)
+            kwargs.__setitem__(
+                "db",
+                0,
+            )
             task2 = asyncio.create_task(
                 self._async_caching(
                     f"user:{user.__getattribute__('id')}:session", **kwargs
@@ -549,7 +891,7 @@ class UserViews(ViewSet):
                 b = Binary()
                 session_key_user_str: str = b.str_to_binary(
                     f"user:{user.__getattribute__('id')}:session"
-                ).decode()
+                ).decode("utf-8")
                 coockie = Cookies(session_key_user_str, response)
                 response: HttpResponse = coockie.session_user()
             except Exception as error:
@@ -591,7 +933,7 @@ class UserViews(ViewSet):
                     access_base64_binary = access_binary.object_to_binary(
                         item.access_token
                     )
-                    return base64.b64encode(access_base64_binary).decode()
+                    return base64.b64encode(access_base64_binary).decode("utf-8")
 
                 """RUN TASKS: access & refresh token base64 & user properties"""
                 result_list = await asyncio.gather(
@@ -637,6 +979,93 @@ class UserViews(ViewSet):
                 )
 
         response.data = {"data": "User have was activated before"}
+        return response
+
+    @swagger_auto_schema(
+        operation_description="""
+                    Method: PATCH and the fixed pathname of url
+                    Example PATHNAME: "/api/auth/person/<str:pk>/inactive/"
+
+                    """,
+        responses={
+            200: "user was inactivated",
+            401: "Some wink what wron/ Check you data",
+            400: "Bad request",
+            500: "Internal server error",
+        },
+        tags=["person"],
+        manual_parameters=[
+            openapi.Parameter(
+                # https://drf-yasg.readthedocs.io/en/stable/custom_spec.html?highlight=properties
+                name="X-CSRFToken",
+                title="X-CSRFToken",
+                in_=openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+            )
+        ],
+    )
+    async def inactive(
+        self, request: HttpRequest, pk: str = None, **kwargs
+    ) -> HttpResponse:
+        from person.tasks.task_user_is_login import task_user_login
+
+        user = request.user
+        response = Response(status=status.HTTP_401_UNAUTHORIZED)
+        if user.is_active and pk and user.id == int(pk):
+
+            async def person_inactive(pk: str):
+                client_person = RedisOfPerson(db=1)
+                async for key_one in iterator_get_person_cache(client_person):
+                    # Here is a Radis
+                    try:
+                        b_caches_user = await client_person.get(key_one)
+                        caches_user = json.loads(b_caches_user.decode("utf-8"))
+                        # check username
+                        if caches_user and isinstance(caches_user, dict):
+                            # We do actively for user when found his to the cache.
+
+                            caches_user["is_active"] = False
+                            await client_person.aclose()
+                            break
+                    except Exception as error:
+                        raise error
+
+            async def session_closing(pk: str):
+                """
+                HEre, delete the  'user:< pk:str >:session'
+                :param pk:
+                :return:
+                """
+                client_session = RedisOfPerson(db=0)
+                try:
+                    await client_session.async_del_cache_user(f"user:{pk}:session")
+                    await client_session.aclose()
+
+                except Exception as error:
+                    raise error
+
+            try:
+                # Removing from Redis db 1
+                task_person_inactive = asyncio.create_task(person_inactive(pk))
+                # REmoving from Redis db 2
+                task_session_closing = asyncio.create_task(session_closing(pk))
+
+                await asyncio.gather(task_person_inactive, task_session_closing)
+
+            except Exception as error:
+                response.data = {"data": "ERROR => %s" % error.args[0]}
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return response
+
+            # Then
+            response.data = {"data": "User have was inactive"}
+            response.status_code = status.HTTP_200_OK
+            return response
+
+        response.data = {
+            "data": "User was inactive before or something what wrong in the request"
+        }
         return response
 
     @staticmethod
@@ -706,6 +1135,7 @@ class UserViews(ViewSet):
                     key,
                 )
             )
+            # CELERY
             await client.async_set_cache_user(key=key, **kwargs)
             log.info(
                 "%s: Prepared the 'client.async_set_cache_user'"

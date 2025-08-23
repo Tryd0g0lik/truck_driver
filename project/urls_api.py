@@ -11,5 +11,10 @@ urlpatterns = [
         UserViews.as_view({"post": "active"}),
         name="auth_api_person_active",
     ),
+    path(
+        "auth/person/<str:pk>/inactive/",
+        UserViews.as_view({"patch": "inactive"}),
+        name="auth_api_person_inactive",
+    ),
     path("auth/csrftoken/", CSRFTokenView.as_view(), name="token_obtain_pair"),
 ]
