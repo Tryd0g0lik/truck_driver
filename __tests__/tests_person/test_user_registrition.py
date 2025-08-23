@@ -4,12 +4,10 @@ __tests__/tests_person/test_user_registrition.py
 
 import pytest
 import logging
-from __tests__.__fixtures__.fix import fix_clear_db
-from logs import configure_logging
 from rest_framework.test import APIRequestFactory
-
 from django.contrib.auth.models import AnonymousUser
-
+from __tests__.__fixtures__.fix import fix_get_user_of_db
+from logs import configure_logging
 from project.views import CSRFTokenView
 
 log = logging.getLogger(__name__)
@@ -20,19 +18,18 @@ configure_logging(logging.INFO)
     "username, email, password, category, expected",
     [
         ("Serge", "serge@his.com", "123456789", "BASE", True),
-        (" Serge ", "serge@his.com", "123456%789", "BASE", True),
-        (" Serge ", "serge@his.com", "1234567dsq89", "BASE", True),
+        (" Serge_01 ", "serge@his.com", "123456%789", "BASE", True),
+        (" Serge_03 ", "serge@his.com", "1234567dsq89", "BASE", True),
         ("Serge_02", "serge@his.com", "123456789", "BASE", True),
     ],
 )
+@pytest.mark.person_creat_valid
 @pytest.mark.django_db
 async def test_person_valid(
-    fix_clear_db, username, email, password, category, expected
+    fix_get_user_of_db, username, email, password, category, expected
 ) -> None:
     from person.views_api.users_views import UserViews
 
-    # Here , we clear of db
-    await fix_clear_db()
     log.info(
         "%s: START TEST WHERE 'username': %s & 'email': %s & 'password': %s & 'category': %s & 'expecteD': %s"
         % (
@@ -50,7 +47,7 @@ async def test_person_valid(
     )
     request = fuctory.post("/person/", content_type="application/json")
     request.__setattr__("user", AnonymousUser())
-    request.user.__setattr__("is_active", True)
+    request.user.__setattr__("is_active", False)
     request.__setattr__(
         "data",
         {
@@ -62,11 +59,11 @@ async def test_person_valid(
     )
     email = request.data.__getitem__("email")
     log.info("%s: GET REQUEST.data['email'] %s" % (test_person_valid.__name__, email))
-    csrf = await CSRFTokenView().get(request)
-    request.headers.__setattr__("Set-Cookie", csrf)
-    log.info(
-        "%s: GET REQUEST" % test_person_valid.__name__,
-    )
+    # csrf = await CSRFTokenView().get(request)
+    # request.headers.__setattr__("Set-Cookie", csrf)
+    # log.info(
+    #     "%s: GET REQUEST" % test_person_valid.__name__,
+    # )
 
     response = await UserViews().create(request)
 
@@ -87,3 +84,5 @@ async def test_person_valid(
     log.info(
         "%s: RESPONSE 'res_bool.data' %s" % (test_person_valid.__name__, response.data)
     )
+    # In the log file can see a quantity of line which was created to the 'Users' db. It's lines from the test.
+    await fix_get_user_of_db()

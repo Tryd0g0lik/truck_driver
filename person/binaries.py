@@ -24,7 +24,7 @@ class Binary:
 
     def object_to_binary(self, obj) -> bytes:
         """
-        Here, is used library pickle for a work with a binary and json data.
+        Here, is used library 'pickle' for a work with a binary and json data.
         Transformation object to the binary data"""
         return pickle.dumps(obj)
 

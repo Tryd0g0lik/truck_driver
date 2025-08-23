@@ -1,5 +1,4 @@
-from http.client import responses
-
+import logging
 from django.http import HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
 from drf_yasg.utils import swagger_auto_schema
@@ -9,7 +8,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from adrf.views import APIView
 from drf_yasg import openapi
-from typing import Coroutine
+from logs import configure_logging
+
+log = logging.getLogger(__name__)
+configure_logging(logging.INFO)
 
 
 class CSRFTokenView(APIView):
@@ -38,7 +40,15 @@ class CSRFTokenView(APIView):
             token = get_token(request)
             response = JsonResponse({"csrfToken": token})
             response.status_code = status.HTTP_200_OK
+            log.info(
+                "%s: csrfToken Ok"
+                % (CSRFTokenView.__class__.__name__ + "." + self.get.__name__)
+            )
             return response
         response = Response(status=status.HTTP_400_BAD_REQUEST)
         response.data = "csrfToken not Ok"
+        log.info(
+            "%s: csrfToken not Ok"
+            % (CSRFTokenView.__class__.__name__ + "." + self.get.__name__)
+        )
         return response
