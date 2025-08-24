@@ -7,10 +7,12 @@ import asyncio
 import re
 from datetime import datetime
 from http.client import responses
+from tkinter.scrolledtext import example
 
 from typing import List, Union
 
 from django.shortcuts import get_object_or_404
+from django.template.defaultfilters import title
 from kombu.exceptions import OperationalError
 from django.contrib.auth import login as login_user
 from django.contrib.auth.models import AnonymousUser
@@ -90,6 +92,15 @@ class UserViews(ViewSet):
         operation_description="""
             User admin can get all users list.
             Permissions if you is superuser.
+            ---
+            additional parameters:
+            - name: session_user
+              in: cookie
+              required: true
+              type: string
+              example: "nH2qGiehvEXjNiYqp3bOVtAYv...."
+              description: "This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
+            
             """,
         tags=["person"],
         responses={
@@ -170,14 +181,7 @@ class UserViews(ViewSet):
             ),
         },
         manual_parameters=[
-            openapi.Parameter(
-                required=True,
-                name="AccessToken",
-                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
-                in_=openapi.IN_HEADER,
-                description="This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
-                type=openapi.TYPE_STRING,
-            ),
+
         ],
     )
     async def list(self, request: HttpRequest) -> HttpResponse:
@@ -246,7 +250,15 @@ class UserViews(ViewSet):
         operation_description=""""
                     You can gat data if you is the superuser or
                      index (it's parameter from the url path) for what retrieve data single user (if user index is pk).
-
+                    ---
+                    additional parameters:
+                    - name: session_user
+                      in: cookie
+                      required: true
+                      type: string
+                      example: "nH2qGiehvEXjNiYqp3bOVtAYv...."
+                      description: "This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
+                    
                 """,
         tags=["person"],
         manual_parameters=[
@@ -255,16 +267,8 @@ class UserViews(ViewSet):
                 title="pk",
                 in_=openapi.IN_PATH,
                 type=openapi.TYPE_INTEGER,
-                example=54,
+                example="54",
                 format=openapi.FORMAT_INT64,
-            ),
-            openapi.Parameter(
-                required=True,
-                name="AccessToken",
-                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
-                in_=openapi.IN_HEADER,
-                description="This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
-                type=openapi.TYPE_STRING,
             ),
         ],
         responses={
@@ -870,6 +874,7 @@ class UserViews(ViewSet):
             serializers = AsyncUsersSerializer(user)
             user_dict = await sync_for_async(lambda: serializers.data)
             kwargs = {"user": user_dict, "db": 1}
+            # TASK 1
             task1 = asyncio.create_task(
                 self._async_caching(
                     f"user:{user.__getattribute__("id")}:person", **kwargs
@@ -880,6 +885,7 @@ class UserViews(ViewSet):
                 request.user = user
                 await asyncio.to_thread(login_user, request, user=user)
 
+            # TASK 2
             kwargs.__setitem__(
                 "db",
                 0,
@@ -899,8 +905,8 @@ class UserViews(ViewSet):
                 session_key_user_str: str = b.str_to_binary(
                     f"user:{user.__getattribute__('id')}:session"
                 ).decode("utf-8")
-                coockie = Cookies(session_key_user_str, response)
-                response: HttpResponse = coockie.session_user()
+                cookie = Cookies(session_key_user_str, response)
+                response: HttpResponse = cookie.session_user()
             except Exception as error:
                 log.error(
                     "%s: ERROR => %s"
@@ -928,7 +934,7 @@ class UserViews(ViewSet):
             try:
                 """BELOW IS TASKS"""
 
-                # Get properties of user for publication
+                # TASK 3. Get properties of user for publication
                 def task_get_user_prop(item_list: list) -> dict:
                     return {
                         k: v for k, v in item_list[0].items() if k not in ["password"]
@@ -992,7 +998,14 @@ class UserViews(ViewSet):
         operation_description="""
                     Method: PATCH and the fixed pathname of url
                     Example PATHNAME: "/api/auth/person/<str:pk>/inactive/"
-
+                    ---
+                    additional parameters:
+                    - name: session_user
+                      in: cookie
+                      required: true
+                      type: string
+                      example: "nH2qGiehvEXjNiYqp3bOVtAYv...."
+                      description: "This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
                     """,
         responses={
             200: "user was inactivated",
@@ -1003,13 +1016,23 @@ class UserViews(ViewSet):
         tags=["person"],
         manual_parameters=[
             openapi.Parameter(
+                required=True,
+                name="id",
+                title="pk",
+                in_=openapi.IN_PATH,
+                type=openapi.TYPE_STRING,
+                example="12"
+            ),
+            openapi.Parameter(
+                required=True,
                 # https://drf-yasg.readthedocs.io/en/stable/custom_spec.html?highlight=properties
                 name="X-CSRFToken",
                 title="X-CSRFToken",
                 in_=openapi.IN_HEADER,
                 type=openapi.TYPE_STRING,
                 example="nH2qGiehvEXjNiYqp3bOVtAYv....",
-            )
+            ),
+
         ],
     )
     async def inactive(
