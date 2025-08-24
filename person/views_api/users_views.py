@@ -11,8 +11,10 @@ from tkinter.scrolledtext import example
 
 from typing import List, Union
 
+from django.db.models.expressions import result
 from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import title
+from keyring.util.platform_ import data_root
 from kombu.exceptions import OperationalError
 from django.contrib.auth import login as login_user
 from django.contrib.auth.models import AnonymousUser
@@ -100,7 +102,7 @@ class UserViews(ViewSet):
               type: string
               example: "nH2qGiehvEXjNiYqp3bOVtAYv...."
               description: "This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
-            
+
             """,
         tags=["person"],
         responses={
@@ -180,9 +182,7 @@ class UserViews(ViewSet):
                 },
             ),
         },
-        manual_parameters=[
-
-        ],
+        manual_parameters=[],
     )
     async def list(self, request: HttpRequest) -> HttpResponse:
         """
@@ -258,7 +258,7 @@ class UserViews(ViewSet):
                       type: string
                       example: "nH2qGiehvEXjNiYqp3bOVtAYv...."
                       description: "This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
-                    
+
                 """,
         tags=["person"],
         manual_parameters=[
@@ -363,7 +363,7 @@ class UserViews(ViewSet):
                     },
                 ),
             ),
-            401: "Some wink what wrong/ Check you data",
+            401: "Something what wrong. Check you data",
             400: "Bad request",
             500: "Internal server error",
         },
@@ -435,6 +435,7 @@ class UserViews(ViewSet):
     @swagger_auto_schema(
         operation_description="""
             Method: POST and the fixed pathname of '/api/auth/person/'\
+            VIEW: FORM DATA
             Example PATHNAME: "{{url_base}}/api/auth/person/"\
             @param: str category: Single line from total list, it user must choose/select.\
             Total list from category: BASE, DRIVER, MANAGER, ADMIN. It's roles for user. Everyone \
@@ -443,11 +444,12 @@ class UserViews(ViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             title="BodyData",
-            in_=openapi.IN_BODY,
+            in_=openapi.IN_FORM,
             required=["username", "password"],
             properties={
                 "username": openapi.Schema(
-                    example="<user_name>", type=openapi.TYPE_STRING
+                    example="<user_name>",
+                    type=openapi.TYPE_STRING,
                 ),
                 "email": openapi.Schema(
                     example="<user_email>", type=openapi.TYPE_STRING
@@ -616,14 +618,15 @@ class UserViews(ViewSet):
 
     @swagger_auto_schema(
         operation_description="""
-                Method: POST and the fixed pathname of url
+                Method: POST and the fixed pathname of url.
+                VIEW: FORM DATA.
                 Example PATHNAME: "/api/auth/person/0/active/"
 
                 """,
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             title="BodyData",
-            in_=openapi.IN_BODY,
+            in_=openapi.IN_FORM,
             required=["username", "password"],
             properties={
                 "username": openapi.Schema(example="Serge", type=openapi.TYPE_STRING),
@@ -762,7 +765,7 @@ class UserViews(ViewSet):
                     },
                 ),
             ),
-            401: "Some wink what wrong/ Check you data",
+            401: "Something what wrong/ Check you data",
             400: "Bad request",
             500: "Internal server error",
         },
@@ -1009,7 +1012,7 @@ class UserViews(ViewSet):
                     """,
         responses={
             200: "user was inactivated",
-            401: "Some wink what wron/ Check you data",
+            401: "Something what wron/ Check you data",
             400: "Bad request",
             500: "Internal server error",
         },
@@ -1021,7 +1024,7 @@ class UserViews(ViewSet):
                 title="pk",
                 in_=openapi.IN_PATH,
                 type=openapi.TYPE_STRING,
-                example="12"
+                example="12",
             ),
             openapi.Parameter(
                 required=True,
@@ -1032,7 +1035,6 @@ class UserViews(ViewSet):
                 type=openapi.TYPE_STRING,
                 example="nH2qGiehvEXjNiYqp3bOVtAYv....",
             ),
-
         ],
     )
     async def inactive(
@@ -1089,12 +1091,326 @@ class UserViews(ViewSet):
                 response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                 return response
             # Then
-            response.data = {"data": "User have was inactive"}
+            response.data = {"data": "User was inactive"}
             response.status_code = status.HTTP_200_OK
             return response
 
         response.data = {
             "data": "User was inactive before or something what wrong in the request"
+        }
+        return response
+
+    @swagger_auto_schema(
+        operation_description="""
+        Method: PUT.
+        VIEW: BODY DATA.
+        PATHNAME: '/api/auth/person/<str:pk>/update/'.
+        """,
+        responses={
+            200: openapi.Response(
+                description="User data: access & refresh the tokens.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "data": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                allOf=[
+                                    openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "user": openapi.Schema(
+                                                type=openapi.TYPE_OBJECT,
+                                                properties={
+                                                    # Здесь добавьте свойства пользователя,
+                                                    # аналогично вашему первому примеру
+                                                    "id": openapi.Schema(
+                                                        type=openapi.TYPE_INTEGER,
+                                                        format=openapi.FORMAT_INT64,
+                                                        example=123,
+                                                    ),
+                                                    "username": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="Serge",
+                                                    ),
+                                                    "last_login": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "first_name": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="",
+                                                    ),
+                                                    "email": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_EMAIL,
+                                                    ),
+                                                    "is_staff": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "is_active": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "date_joined": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "created_at": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "updated_at": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "category": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="DRIVER",
+                                                    ),
+                                                    "password": openapi.Schema(
+                                                        type=openapi.TYPE_STRING
+                                                    ),
+                                                    "is_sent": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "is_verified": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "verification_code": openapi.Schema(
+                                                        type=openapi.TYPE_STRING
+                                                    ),
+                                                    "balamce": openapi.Schema(
+                                                        type=openapi.TYPE_NUMBER,
+                                                        format=openapi.FORMAT_INT64,
+                                                    ),
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                ],
+                            ),
+                        )
+                    },
+                ),
+            ),
+            401: "Something what wrong. Check your data.",
+            500: "Internal server error",
+        },
+        tags=["person"],
+        requests_body=openapi.Response(
+            description="Users array",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                in_=openapi.IN_BODY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER, example=12),
+                        "username": openapi.Schema(
+                            example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+                            type=openapi.TYPE_STRING,
+                        ),
+                        "first_name": openapi.Schema(
+                            type=openapi.TYPE_STRING, example=""
+                        ),
+                        "last_name": openapi.Schema(
+                            type=openapi.TYPE_STRING, example=""
+                        ),
+                        "last_login": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="2025-07-20 00:39:14.739 +0700",
+                        ),
+                        "password": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="dsa455weqd",
+                        ),
+                        "is_superuser": openapi.Schema(
+                            type=openapi.TYPE_BOOLEAN,
+                            example=False,
+                        ),
+                        "is_staff": openapi.Schema(
+                            type=openapi.TYPE_BOOLEAN,
+                            example=False,
+                            description="user got permissions how superuser or not.",
+                        ),
+                        "is_active": openapi.Schema(
+                            type=openapi.TYPE_BOOLEAN,
+                            example=False,
+                        ),
+                        "date_joined": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="2025-07-20 00:39:14.739 +0700",
+                        ),
+                        "created_at": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="2025-07-20 00:39:14.739 +0700",
+                        ),
+                        "balance": openapi.Schema(
+                            type=openapi.TYPE_NUMBER, example="12587.268"
+                        ),
+                        "verification_code": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="_null_jOePj2i769OQ4XsFPihlA....",
+                            description="""
+                                '<username>_null_jOePj2i769OQ4XsFPihlA....'
+                                This is a code from  referral link.
+                                """,
+                        ),
+                        "is_sent": openapi.Schema(
+                            type=openapi.TYPE_BOOLEAN,
+                            example=True,
+                            description="""
+                                Referral link was sent by user email address.
+                                """,
+                        ),
+                    },
+                ),
+            ),
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                required=True,
+                name="id",
+                title="pk",
+                in_=openapi.IN_PATH,
+                type=openapi.TYPE_STRING,
+                example="12",
+            ),
+            openapi.Parameter(
+                required=True,
+                # https://drf-yasg.readthedocs.io/en/stable/custom_spec.html?highlight=properties
+                name="X-CSRFToken",
+                title="X-CSRFToken",
+                in_=openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+            ),
+        ],
+    )
+    async def update(self, request: HttpRequest, pk=0, **kwargs) -> HttpResponse:
+        user = request.user
+        data = (
+            (request.body).decode("utf-8")
+            if isinstance(request.body, bytes)
+            else request.body
+        )
+        if isinstance(data, str):
+            data = json.loads(data)
+        response = Response(status=status.HTTP_401_UNAUTHORIZED)
+        if user.is_active and user.is_authenticated and isinstance(data, dict):
+            try:
+                # TASK
+                def run_in_thread(pk: str, data_dict: dict) -> bool:
+                    """
+                    Through this function will be change the properties of user to the Redis 1
+                    :param pk:
+                    :param data_dict:
+                    :return:
+                    """
+                    # create the new even loop
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        task_list = []
+                        # Build of task
+                        if IsAll().has_permission(request):
+                            # FOR ADMINISTRATION
+                            for k, v in data_dict.items():
+                                task = loop.create_task(
+                                    self.redis_person_inactive(pk, k, v)
+                                )
+                                task_list.append(task)
+                        keys_list = [
+                            "id",
+                            "username",
+                            "is_staff",
+                            "is_superuser",
+                            "is_active",
+                            "date_joined",
+                            "balance",
+                            "is_verified",
+                            "category",
+                            "verification_code",
+                            "created_at",
+                            "is_sent",
+                        ]  # Only  IsAll() can change this data
+                        result_list = [
+                            elem for elem in list(data_dict.keys()) if elem in keys_list
+                        ]
+                        if (
+                            len(result_list) > 0
+                            and not IsAll().has_permission(request)
+                            and not IsReader().has_permission(request)
+                        ):
+
+                            log.error(
+                                "%s: ERROR => %s"
+                                % (
+                                    UserViews.__class__.__name__
+                                    + "."
+                                    + UserViews.update.__name__,
+                                    "You have not rights!",
+                                )
+                            )
+                            raise ValueError(
+                                "%s: ERROR => %s"
+                                % (
+                                    UserViews.__class__.__name__
+                                    + "."
+                                    + UserViews.update.__name__,
+                                    "You have not rights!",
+                                )
+                            )
+                        elif (
+                            len(result_list) == 0
+                            and not IsAll().has_permission(request)
+                            and not IsReader().has_permission(request)
+                        ):
+                            for k, v in data_dict.items():
+                                v = self.get_hash_password(v) if k == "password" else v
+                                task = loop.create_task(
+                                    self.redis_person_inactive(pk, k, v)
+                                )
+                                task_list.append(task)
+                        # Run the list of tasks
+                        loop.run_until_complete(asyncio.gather(*task_list))
+                    except Exception as error:
+                        log.error(
+                            "%s: ERROR => %s"
+                            % (
+                                UserViews.__class__.__name__
+                                + "."
+                                + UserViews.update.__name__,
+                                error.args[0],
+                            )
+                        )
+                        raise ValueError(
+                            "%s: ERROR => %s"
+                            % (
+                                UserViews.__class__.__name__
+                                + "."
+                                + UserViews.update.__name__,
+                                error.args[0],
+                            )
+                        )
+                    finally:
+                        loop.close()
+
+                threading.Thread(target=run_in_thread, args=(pk, data)).start()
+            except Exception as error:
+                response.data = {"data": "ERROR => %s" % error.args[0]}
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return response
+            # Then
+            response.status_code = status.HTTP_200_OK
+            return response
+        response.data = {
+            "data": "Something what wrong. Check the User active or authenticated, data not correct."
         }
         return response
 

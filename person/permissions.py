@@ -10,9 +10,9 @@ class IsAll(BasePermission):
             request.user
             and request.user.is_authenticated
             and request.user.is_active
+            and request.user.is_staff
             and (
-                request.user.is_staff
-                or request.user.is_superuser
+                request.user.is_superuser
                 or request.user.groups.filter(name__in=["ADMIN", "Supervisor"]).exists()
             )
         )

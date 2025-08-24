@@ -15,10 +15,12 @@ Now, user can to registrate.
     category: "BASE"
 }
 ```
-- "`category`" Single line from total list, it user must choose/select. Total list from category: "`BASE`", "`DRIVER`", "`MANAGER`", "`CLIENT`", "`ADMIN`". It's roles for using the service. Everyone role contain the list permissions and rules.
+- "`category`" (role of users) Single line from total list, it user must choose/select. Total list from category: "`BASE`", "`DRIVER`", "`MANAGER`", "`CLIENT`", "`ADMIN`". It's roles for using the service. Everyone role contain the list permissions and rules.
 
-DB (basis)  has a cache to the Redis:
- - user/person to the 1 redis db. 
+
+**DB (basis)  has a cache to the Redis**:
+ - user/person cache to the 1 of redis db. 
+ - user/person session to the 0 of redis db. 
 
 **Celery**\
 ![celery](./img/celery.png)
@@ -273,14 +275,15 @@ Now, email's message we can see only inside of console or truck_driver doker's l
 ----
 ## OpenAPI
 - '`GET`' "`{{url_basis}}/api/auth/person/`" - Get the list of records from the person db and for user admin 
-- '`GET`' "`{{url_basis}}/api/auth/person/<str:pk>/`" - Get the one/single records from the person 
+- '`GET`' "`{{url_basis}}/api/auth/person/<str:pk>/`" - Get the one/single records from the person. 'pk' is user's index. 
 - '`POST`' "`{{url_basis}}/api/auth/person/`" - User registration.\
 For filling out the blank/form, for us need the Truck Driver. Above, API for registration. And, no more. :-( I didn't make it for 16 hours.\
 But, we have and [Fron path](https://github.com/Tryd0g0lik/truck_driver_front).
 - '`GET`' "`{{url_basis}}/activate/< referral_token >/`" - reference from the user's letter by level the registration and authentification.
 - '`POST`' "`{{url_basis}}/api/auth/person/0/active/`" - User activation
-- '`PATCH`' "`{{url_basis}}/api/auth/person/83/inactive/`" - User inactive
+- '`PATCH`' "`{{url_basis}}/api/auth/person/<str:pk>/inactive/`" - User inactive. 'pk' is user's index.
 - '`GET`' "`{{url_basis}}/api/auth/csrftoken/`" - Get csrf-token into the cookie
+- '`PUT`' "`{{url_basis}}/api/auth/person/<str:pk>/`" Change data in redis. 'pk' is user's index.
 
 ### Swagger
 **Example of redoc**\
@@ -322,6 +325,21 @@ You are will see the nice image\
 
 **Linux docker daphna nginx postgres**\
 ![linux_docker](./img/linux_docker.png)
+
+## Role of user
+### ADMIN
+This user has fully  full the access. His can reade and to enter the changes.
+
+### BASE
+This user can only read after the authorisation.
+
+## DRIVER, MANAGER, CLIENT
+User uses roles which is presente - above in title, can bring  the changes to the data from your profile. But they don't can change the next properties:
+- "`id`", "`username`", "`is_staff`", "`is_superuser`", "`is_verified`", "`created_at`";
+- "`is_active`", "`date_joined`", "`balance`", "`category`", "`verification_code`", "`is_sent`",
+
+His can chang the:
+ - "`first_name`", "`last_name`", "`email`", "`password`"
 
 
 ## And More
