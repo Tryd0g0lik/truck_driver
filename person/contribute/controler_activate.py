@@ -126,7 +126,6 @@ from 'is_activated'. Redirect. 301",
             kwargs={"user_id": user.__getattribute__("id")}
         )
 
-        # user_authenticate = authenticate(request, username=user.username, password=user.password)
         # if user_authenticate is not None:
         if user.__setattr__("id", True):
             login(request, user)

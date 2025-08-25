@@ -25,7 +25,7 @@ from rest_framework import permissions
 
 from project import settings
 from project.urls_api import urlpatterns as api_urls
-from person.views import main_views
+
 from person.contribute.controler_activate import user_activate
 
 schema_view = get_schema_view(
