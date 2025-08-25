@@ -9,7 +9,7 @@ from datetime import datetime
 from http.client import responses
 from tkinter.scrolledtext import example
 
-from typing import List, Union
+from typing import List, Union, Callable
 
 from django.db.models.expressions import result
 from django.shortcuts import get_object_or_404
@@ -1008,7 +1008,7 @@ class UserViews(ViewSet):
                       required: true
                       type: string
                       example: "nH2qGiehvEXjNiYqp3bOVtAYv...."
-                      description: "This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
+                      description: "This token has a prefix. It's 'Bearer ' - beginning of token.",
                     """,
         responses={
             200: "user was inactivated",
@@ -1412,6 +1412,133 @@ class UserViews(ViewSet):
         response.data = {
             "data": "Something what wrong. Check the User active or authenticated, data not correct."
         }
+        return response
+
+    @swagger_autho_shema(
+        operation_description="""
+        Methos: DELETE
+        PATHNAME: person/<str:pk>/
+        ---
+        additioanal parameters:
+        - name: session_user
+          in: cookie
+          required: true
+          type: string
+          example: "nH2qGiehvEXjNiYqp3bOVtAYv...."
+          description: "This token has a prefix. It's 'Bearer ' - beginning of token.",
+        """,
+        tags=["person"],
+        responses={
+            200: "Ok",
+            404: "Something what wrong. Check the 'pk' from your pathname.",
+            500: "< text_of_error >",
+            401: "Something what wrong. Check the User active or authenticated",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                required=True,
+                name="id",
+                title="pk",
+                in_=openapi.IN_PATH,
+                type=openapi.TYPE_STRING,
+                example="12",
+            ),
+            openapi.Parameter(
+                required=True,
+                name="X-CSRFToken",
+                title="X-CSRFToken",
+                in_=openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+            ),
+        ],
+    )
+    async def delete(self, request, pk, **kwargs) -> HttpResponse:
+        """
+        This function delete the user's data from the:
+        - relation da;
+        - redis 1;
+        - redis 0.
+        :param request:
+        :param str pk: This is index of user which we will be remove
+        :param kwargs: None
+        :return:
+        """
+        user = request.user
+        response = Response(status=status.HTTP_401_UNAUTHORIZED)
+        message = "%s: ERROR => " % (
+            UserViews.__class__.__name__ + "." + self.delete.__name__
+        )
+        result_regex = re.compile(r"[0-9]+").search(pk)
+        if not result_regex or (result_regex and len(result_regex[0]) != len(pk)):
+            response.data = {
+                "data": "Something what wrong. Check the 'pk' from your pathname."
+            }
+            response.status_code = status.HTTP_404_NOT_FOUND
+            return response
+
+        if IsAll().has_permission(request) or (user.is_active and user.id == int(pk)):
+            try:
+                # DELER FROM REDIS 1 & REDIS 0.
+                # It's from redis 1
+                def remove_from_redis_one(pk: str) -> bool:
+                    """Here, user data by 'pk' is removeing from the db redis's 1"""
+                    redis_key = f"user:{pk}:person"
+                    client = RedisOfPerson()
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
+                    try:
+                        task = loop.create_task(client.async_del_cache_user(redis_key))
+                        loop.run_until_complete(task)
+                    except Exception as error:
+                        message += error.args[0]
+                        log.error(message)
+                    finally:
+                        loop.close()
+
+                def remove_from_redis_second(pk: str) -> bool:
+                    """Here, user data by 'pk' is removeing from the db redis's 0"""
+                    redis_key = f"user:{pk}:session"
+                    client = RedisOfPerson(db=0)
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
+                    try:
+                        task = loop.create_task(client.async_del_cache_user(redis_key))
+                        loop.run_until_complete(task)
+                    except Exception as error:
+                        message += error.args[0]
+                        log.error(message)
+                    finally:
+                        loop.close()
+
+                threading.Thread(target=remove_from_redis_one, args=(pk,)).start()
+                threading.Thread(target=remove_from_redis_second, args=(pk)).start()
+            except Exception as error:
+                message += error.args[0]
+                log.error(message)
+                response.data = {"data": message}
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return response
+
+            try:
+                # DELER FROM RELATION DB.
+                [await view.adelete() async for view in Users.objects.filter(pk=pk)]
+            except Exception as error:
+                message += error.args[0]
+                log.error(message)
+                response.data = {"data": message}
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return response
+            response.data = {"data": "OK"}
+            response.status_code = status.HTTP_200_OK
+            return response
+
+        response.data = {
+            "data": "Something what wrong. Check the User active or authenticated"
+        }
+        response.status_code = status.HTTP_401_UNAUTHORIZED
         return response
 
     @staticmethod

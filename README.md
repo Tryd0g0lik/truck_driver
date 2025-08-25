@@ -133,13 +133,13 @@ API__POST_REGISTERATION=/api/auth/register/
 
 </details>
 
-|||                           |
-|:----|:----|:--------------------------|
-|async "`Django`"|async "`DRF`"| "`JWT`" от "`DRF`"        |
-|"`Celery`"|"`Radis`"| "`PostgreSQL` or "`ASQLite`" |
-|"`daphne`"|"`Signal`"| "`pytest`"                |
-|[swagger](./swagger)|[nginx](./nginx/default.conf)|[docker-compose](./docker-compose.yml)   |
-|daphna server|| |
+|                      |                               |                           |
+|:---------------------|:------------------------------|:--------------------------|
+| async "`Django`"     | async "`DRF`"                 | "`JWT`" от "`DRF`"        |
+| "`Celery`"           | "`Radis`"                     | "`PostgreSQL` or "`ASQLite`" |
+| "`daphne`"           | "`Signal`"                    | "`pytest`"                |
+| [swagger](./swagger) | [nginx](./nginx/default.conf) |[docker-compose](./docker-compose.yml)   |
+| "`asincio`"              | "`threading`"                     | |
  
 ----
 
@@ -284,7 +284,7 @@ But, we have and [Fron path](https://github.com/Tryd0g0lik/truck_driver_front).
 - '`PATCH`' "`{{url_basis}}/api/auth/person/<str:pk>/inactive/`" - User inactive. 'pk' is user's index.
 - '`GET`' "`{{url_basis}}/api/auth/csrftoken/`" - Get csrf-token into the cookie
 - '`PUT`' "`{{url_basis}}/api/auth/person/<str:pk>/`" Change data in redis. 'pk' is user's index.
-
+- '`DELETE`' "`{{url_basis}}/api/auth/person/<str:pk>/`" Removing the user's data from everyone db. 
 ### Swagger
 **Example of redoc**\
 ![redoc](./img/redoc.png)
