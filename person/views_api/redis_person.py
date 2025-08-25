@@ -1,4 +1,3 @@
-import asyncio
 import base64
 import json
 import logging
@@ -10,8 +9,6 @@ from redis.exceptions import ConnectionError
 from dotenv_ import DB_TO_RADIS_HOST, DB_TO_RADIS_PORT
 from logs import configure_logging
 from person.binaries import Binary
-from person.views_api.serializers import CacheUsersSerializer, AsyncUsersSerializer
-from project.service import sync_for_async
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)

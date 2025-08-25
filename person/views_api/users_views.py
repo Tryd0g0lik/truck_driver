@@ -186,6 +186,7 @@ class UserViews(ViewSet):
     )
     async def list(self, request: HttpRequest) -> HttpResponse:
         """
+        TODO: Crate the unload frin the cache redis's db the 1 & 0. Need be add the pagination for unload of db. Now admin can get list from only the relation db.
         Superuser can get the users array of data.
         :param request:
         :return:
@@ -231,7 +232,7 @@ class UserViews(ViewSet):
         ```
         """
         user: U | AnonymousUser = request.user
-        if user.is_active and user.is_staff:
+        if IsAll().has_permission(request):
             try:
                 queryset_list = [views async for views in Users.objects.all()]
                 serializer = await sync_for_async(
@@ -397,20 +398,18 @@ class UserViews(ViewSet):
         ```
         """
         user: U | AnonymousUser = request.user
-        log.info(
-            (
-                "%s: USERNAME: %s, PK: %s"
-                % (
-                    UserViews.__class__.__name__ + "." + self.retrieve.__name__,
-                    request.user.username,
-                    pk,
-                )
-            )
+        message = "%s: ERROR => " % (
+            UserViews.__class__.__name__ + "." + self.delete.__name__
         )
-        if pk and (
-            await sync_for_async(IsAll().has_permission, request)
-            or user.__getattribute__("id") == int(pk)
-        ):
+        result_regex = re.compile(r"[0-9]+").search(pk)
+        if not result_regex or (result_regex and len(result_regex[0]) != len(pk)):
+            response.data = {
+                "data": "Something what wrong. Check the 'pk' from your pathname."
+            }
+            response.status_code = status.HTTP_404_NOT_FOUND
+            return response
+
+        if await sync_for_async(IsAll().has_permission, request):
             try:
                 users_list = [view async for view in Users.objects.filter(pk=int(pk))]
                 if len(users_list) == 0:
@@ -424,6 +423,7 @@ class UserViews(ViewSet):
                     status=status.HTTP_200_OK,
                 )
             except Exception as error:
+                log.error(manage + error.args[0])
                 return Response(
                     {"data": error.args.__getitem__(0)},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -781,7 +781,7 @@ class UserViews(ViewSet):
             )
         ],
     )
-    async def active(self, request: HttpRequest, pk=0, **kwargs) -> HttpResponse:
+    async def active(self, request: HttpRequest, pk: str="0", **kwargs) -> HttpResponse:
         from person.tasks.task_user_is_login import task_user_login
 
         user = request.user if request.user else AnonymousUser()
