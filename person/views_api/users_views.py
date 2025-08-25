@@ -1414,7 +1414,7 @@ class UserViews(ViewSet):
         }
         return response
 
-    @swagger_autho_shema(
+    @swagger_auto_schema(
         operation_description="""
         Methos: DELETE
         PATHNAME: person/<str:pk>/
