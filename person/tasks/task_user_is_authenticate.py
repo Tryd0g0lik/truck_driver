@@ -77,7 +77,7 @@ async def async_task_user_authenticate(user_id: int) -> dict | bool:
 
     try:
         # UPDATE DATE FROM NON-RELATION DB
-        if user_json.get("login", False):
+        if user_json.get("is_active", False):
             user_json.__setitem__("is_active", True)
         if user_json.get("is_activated", False):
             user_json.__setitem__("is_activated", True)

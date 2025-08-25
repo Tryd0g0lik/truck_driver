@@ -1,20 +1,27 @@
 import base64
 import json
+import threading
 import time
 import logging
 import asyncio
 import re
 from datetime import datetime
 from http.client import responses
+from tkinter.scrolledtext import example
 
-from typing import List
+from typing import List, Union, Callable
 
+from django.db.models.expressions import result
 from django.shortcuts import get_object_or_404
+from django.template.defaultfilters import title
+from keyring.util.platform_ import data_root
 from kombu.exceptions import OperationalError
 from django.contrib.auth import login as login_user
 from django.contrib.auth.models import AnonymousUser
 from django.db import connections
 from django.http import JsonResponse, HttpRequest, HttpResponse
+from pontos.helper import regex
+from pyasn1.type.univ import Boolean
 from rest_framework.response import Response
 from rest_framework import serializers, status
 from adrf.viewsets import ViewSet
@@ -87,6 +94,15 @@ class UserViews(ViewSet):
         operation_description="""
             User admin can get all users list.
             Permissions if you is superuser.
+            ---
+            additional parameters:
+            - name: session_user
+              in: cookie
+              required: true
+              type: string
+              example: "nH2qGiehvEXjNiYqp3bOVtAYv...."
+              description: "This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
+
             """,
         tags=["person"],
         responses={
@@ -166,16 +182,7 @@ class UserViews(ViewSet):
                 },
             ),
         },
-        manual_parameters=[
-            openapi.Parameter(
-                required=True,
-                name="AccessToken",
-                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
-                in_=openapi.IN_HEADER,
-                description="This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
-                type=openapi.TYPE_STRING,
-            ),
-        ],
+        manual_parameters=[],
     )
     async def list(self, request: HttpRequest) -> HttpResponse:
         """
@@ -243,6 +250,14 @@ class UserViews(ViewSet):
         operation_description=""""
                     You can gat data if you is the superuser or
                      index (it's parameter from the url path) for what retrieve data single user (if user index is pk).
+                    ---
+                    additional parameters:
+                    - name: session_user
+                      in: cookie
+                      required: true
+                      type: string
+                      example: "nH2qGiehvEXjNiYqp3bOVtAYv...."
+                      description: "This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
 
                 """,
         tags=["person"],
@@ -252,16 +267,8 @@ class UserViews(ViewSet):
                 title="pk",
                 in_=openapi.IN_PATH,
                 type=openapi.TYPE_INTEGER,
-                example=54,
+                example="54",
                 format=openapi.FORMAT_INT64,
-            ),
-            openapi.Parameter(
-                required=True,
-                name="AccessToken",
-                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
-                in_=openapi.IN_HEADER,
-                description="This token has a prefix. It's 'Bearer ' - beginning of token. Example: 'Bearer gASVKAEAAAAAAACM...'",
-                type=openapi.TYPE_STRING,
             ),
         ],
         responses={
@@ -356,7 +363,7 @@ class UserViews(ViewSet):
                     },
                 ),
             ),
-            401: "Some wink what wrong/ Check you data",
+            401: "Something what wrong. Check you data",
             400: "Bad request",
             500: "Internal server error",
         },
@@ -428,6 +435,7 @@ class UserViews(ViewSet):
     @swagger_auto_schema(
         operation_description="""
             Method: POST and the fixed pathname of '/api/auth/person/'\
+            VIEW: FORM DATA
             Example PATHNAME: "{{url_base}}/api/auth/person/"\
             @param: str category: Single line from total list, it user must choose/select.\
             Total list from category: BASE, DRIVER, MANAGER, ADMIN. It's roles for user. Everyone \
@@ -436,11 +444,12 @@ class UserViews(ViewSet):
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             title="BodyData",
-            in_=openapi.IN_BODY,
+            in_=openapi.IN_FORM,
             required=["username", "password"],
             properties={
                 "username": openapi.Schema(
-                    example="<user_name>", type=openapi.TYPE_STRING
+                    example="<user_name>",
+                    type=openapi.TYPE_STRING,
                 ),
                 "email": openapi.Schema(
                     example="<user_email>", type=openapi.TYPE_STRING
@@ -609,14 +618,15 @@ class UserViews(ViewSet):
 
     @swagger_auto_schema(
         operation_description="""
-                Method: POST and the fixed pathname of url
+                Method: POST and the fixed pathname of url.
+                VIEW: FORM DATA.
                 Example PATHNAME: "/api/auth/person/0/active/"
 
                 """,
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             title="BodyData",
-            in_=openapi.IN_BODY,
+            in_=openapi.IN_FORM,
             required=["username", "password"],
             properties={
                 "username": openapi.Schema(example="Serge", type=openapi.TYPE_STRING),
@@ -755,7 +765,7 @@ class UserViews(ViewSet):
                     },
                 ),
             ),
-            401: "Some wink what wrong/ Check you data",
+            401: "Something what wrong/ Check you data",
             400: "Bad request",
             500: "Internal server error",
         },
@@ -863,7 +873,11 @@ class UserViews(ViewSet):
             user = await asyncio.to_thread(get_object_or_404, Users, **kwargs)
             request.__setattr__("user", user)
             # SET, Caching a new session & person of user.
-            kwargs = {"user": user, "db": 1}
+            user.is_active = True
+            serializers = AsyncUsersSerializer(user)
+            user_dict = await sync_for_async(lambda: serializers.data)
+            kwargs = {"user": user_dict, "db": 1}
+            # TASK 1
             task1 = asyncio.create_task(
                 self._async_caching(
                     f"user:{user.__getattribute__("id")}:person", **kwargs
@@ -874,10 +888,12 @@ class UserViews(ViewSet):
                 request.user = user
                 await asyncio.to_thread(login_user, request, user=user)
 
+            # TASK 2
             kwargs.__setitem__(
                 "db",
                 0,
             )
+            kwargs.__setitem__("user", user)
             task2 = asyncio.create_task(
                 self._async_caching(
                     f"user:{user.__getattribute__('id')}:session", **kwargs
@@ -892,8 +908,8 @@ class UserViews(ViewSet):
                 session_key_user_str: str = b.str_to_binary(
                     f"user:{user.__getattribute__('id')}:session"
                 ).decode("utf-8")
-                coockie = Cookies(session_key_user_str, response)
-                response: HttpResponse = coockie.session_user()
+                cookie = Cookies(session_key_user_str, response)
+                response: HttpResponse = cookie.session_user()
             except Exception as error:
                 log.error(
                     "%s: ERROR => %s"
@@ -921,7 +937,7 @@ class UserViews(ViewSet):
             try:
                 """BELOW IS TASKS"""
 
-                # Get properties of user for publication
+                # TASK 3. Get properties of user for publication
                 def task_get_user_prop(item_list: list) -> dict:
                     return {
                         k: v for k, v in item_list[0].items() if k not in ["password"]
@@ -985,87 +1001,544 @@ class UserViews(ViewSet):
         operation_description="""
                     Method: PATCH and the fixed pathname of url
                     Example PATHNAME: "/api/auth/person/<str:pk>/inactive/"
-
+                    ---
+                    additional parameters:
+                    - name: session_user
+                      in: cookie
+                      required: true
+                      type: string
+                      example: "nH2qGiehvEXjNiYqp3bOVtAYv...."
+                      description: "This token has a prefix. It's 'Bearer ' - beginning of token.",
                     """,
         responses={
             200: "user was inactivated",
-            401: "Some wink what wron/ Check you data",
+            401: "Something what wron/ Check you data",
             400: "Bad request",
             500: "Internal server error",
         },
         tags=["person"],
         manual_parameters=[
             openapi.Parameter(
+                required=True,
+                name="id",
+                title="pk",
+                in_=openapi.IN_PATH,
+                type=openapi.TYPE_STRING,
+                example="12",
+            ),
+            openapi.Parameter(
+                required=True,
                 # https://drf-yasg.readthedocs.io/en/stable/custom_spec.html?highlight=properties
                 name="X-CSRFToken",
                 title="X-CSRFToken",
                 in_=openapi.IN_HEADER,
                 type=openapi.TYPE_STRING,
                 example="nH2qGiehvEXjNiYqp3bOVtAYv....",
-            )
+            ),
         ],
     )
     async def inactive(
         self, request: HttpRequest, pk: str = None, **kwargs
     ) -> HttpResponse:
-        from person.tasks.task_user_is_login import task_user_login
-
         user = request.user
         response = Response(status=status.HTTP_401_UNAUTHORIZED)
         if user.is_active and pk and user.id == int(pk):
-
-            async def person_inactive(pk: str):
-                client_person = RedisOfPerson(db=1)
-                async for key_one in iterator_get_person_cache(client_person):
-                    # Here is a Radis
-                    try:
-                        b_caches_user = await client_person.get(key_one)
-                        caches_user = json.loads(b_caches_user.decode("utf-8"))
-                        # check username
-                        if caches_user and isinstance(caches_user, dict):
-                            # We do actively for user when found his to the cache.
-
-                            caches_user["is_active"] = False
-                            await client_person.aclose()
-                            break
-                    except Exception as error:
-                        raise error
-
-            async def session_closing(pk: str):
-                """
-                HEre, delete the  'user:< pk:str >:session'
-                :param pk:
-                :return:
-                """
-                client_session = RedisOfPerson(db=0)
-                try:
-                    await client_session.async_del_cache_user(f"user:{pk}:session")
-                    await client_session.aclose()
-
-                except Exception as error:
-                    raise error
-
             try:
-                # Removing from Redis db 1
-                task_person_inactive = asyncio.create_task(person_inactive(pk))
-                # REmoving from Redis db 2
-                task_session_closing = asyncio.create_task(session_closing(pk))
+                # TASKS
+                def run_in_thread():
+                    # create the new even loop
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        # Removing from Redis db 1
+                        task_person_inactive = loop.create_task(
+                            self.redis_person_inactive(pk, "is_active", False)
+                        )
+                        # REmoving from Redis db 2
+                        task_session_closing = loop.create_task(
+                            self.redis_session_closing(pk)
+                        )
 
-                await asyncio.gather(task_person_inactive, task_session_closing)
+                        loop.run_until_complete(
+                            asyncio.gather(task_person_inactive, task_session_closing)
+                        )
+                    except Exception as error:
+                        log.error(
+                            "%s: ERROR => %s"
+                            % (
+                                UserViews.__class__.__name__
+                                + "."
+                                + UserViews.inactive.__name__,
+                                error.args[0],
+                            )
+                        )
+                        raise ValueError(
+                            "%s: ERROR => %s"
+                            % (
+                                UserViews.__class__.__name__
+                                + "."
+                                + UserViews.inactive.__name__,
+                                error.args[0],
+                            )
+                        )
+                    finally:
+                        loop.close()
 
+                # Run tasks
+                threading.Thread(target=run_in_thread).start()
             except Exception as error:
                 response.data = {"data": "ERROR => %s" % error.args[0]}
                 response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                 return response
-
             # Then
-            response.data = {"data": "User have was inactive"}
+            response.data = {"data": "User was inactive"}
             response.status_code = status.HTTP_200_OK
             return response
 
         response.data = {
             "data": "User was inactive before or something what wrong in the request"
         }
+        return response
+
+    @swagger_auto_schema(
+        operation_description="""
+        Method: PUT.
+        VIEW: BODY DATA.
+        PATHNAME: '/api/auth/person/<str:pk>/update/'.
+        """,
+        responses={
+            200: openapi.Response(
+                description="User data: access & refresh the tokens.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "data": openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                allOf=[
+                                    openapi.Schema(
+                                        type=openapi.TYPE_OBJECT,
+                                        properties={
+                                            "user": openapi.Schema(
+                                                type=openapi.TYPE_OBJECT,
+                                                properties={
+                                                    # Здесь добавьте свойства пользователя,
+                                                    # аналогично вашему первому примеру
+                                                    "id": openapi.Schema(
+                                                        type=openapi.TYPE_INTEGER,
+                                                        format=openapi.FORMAT_INT64,
+                                                        example=123,
+                                                    ),
+                                                    "username": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="Serge",
+                                                    ),
+                                                    "last_login": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "first_name": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="",
+                                                    ),
+                                                    "email": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_EMAIL,
+                                                    ),
+                                                    "is_staff": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "is_active": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "date_joined": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "created_at": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "updated_at": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        format=openapi.FORMAT_DATETIME,
+                                                        example="2025-07-20 00:39:14.739 +0700",
+                                                    ),
+                                                    "category": openapi.Schema(
+                                                        type=openapi.TYPE_STRING,
+                                                        example="DRIVER",
+                                                    ),
+                                                    "password": openapi.Schema(
+                                                        type=openapi.TYPE_STRING
+                                                    ),
+                                                    "is_sent": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "is_verified": openapi.Schema(
+                                                        type=openapi.TYPE_BOOLEAN
+                                                    ),
+                                                    "verification_code": openapi.Schema(
+                                                        type=openapi.TYPE_STRING
+                                                    ),
+                                                    "balamce": openapi.Schema(
+                                                        type=openapi.TYPE_NUMBER,
+                                                        format=openapi.FORMAT_INT64,
+                                                    ),
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                ],
+                            ),
+                        )
+                    },
+                ),
+            ),
+            401: "Something what wrong. Check your data.",
+            500: "Internal server error",
+        },
+        tags=["person"],
+        requests_body=openapi.Response(
+            description="Users array",
+            schema=openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                in_=openapi.IN_BODY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "id": openapi.Schema(type=openapi.TYPE_INTEGER, example=12),
+                        "username": openapi.Schema(
+                            example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+                            type=openapi.TYPE_STRING,
+                        ),
+                        "first_name": openapi.Schema(
+                            type=openapi.TYPE_STRING, example=""
+                        ),
+                        "last_name": openapi.Schema(
+                            type=openapi.TYPE_STRING, example=""
+                        ),
+                        "last_login": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="2025-07-20 00:39:14.739 +0700",
+                        ),
+                        "password": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="dsa455weqd",
+                        ),
+                        "is_superuser": openapi.Schema(
+                            type=openapi.TYPE_BOOLEAN,
+                            example=False,
+                        ),
+                        "is_staff": openapi.Schema(
+                            type=openapi.TYPE_BOOLEAN,
+                            example=False,
+                            description="user got permissions how superuser or not.",
+                        ),
+                        "is_active": openapi.Schema(
+                            type=openapi.TYPE_BOOLEAN,
+                            example=False,
+                        ),
+                        "date_joined": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="2025-07-20 00:39:14.739 +0700",
+                        ),
+                        "created_at": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="2025-07-20 00:39:14.739 +0700",
+                        ),
+                        "balance": openapi.Schema(
+                            type=openapi.TYPE_NUMBER, example="12587.268"
+                        ),
+                        "verification_code": openapi.Schema(
+                            type=openapi.TYPE_STRING,
+                            example="_null_jOePj2i769OQ4XsFPihlA....",
+                            description="""
+                                '<username>_null_jOePj2i769OQ4XsFPihlA....'
+                                This is a code from  referral link.
+                                """,
+                        ),
+                        "is_sent": openapi.Schema(
+                            type=openapi.TYPE_BOOLEAN,
+                            example=True,
+                            description="""
+                                Referral link was sent by user email address.
+                                """,
+                        ),
+                    },
+                ),
+            ),
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                required=True,
+                name="id",
+                title="pk",
+                in_=openapi.IN_PATH,
+                type=openapi.TYPE_STRING,
+                example="12",
+            ),
+            openapi.Parameter(
+                required=True,
+                # https://drf-yasg.readthedocs.io/en/stable/custom_spec.html?highlight=properties
+                name="X-CSRFToken",
+                title="X-CSRFToken",
+                in_=openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+            ),
+        ],
+    )
+    async def update(self, request: HttpRequest, pk=0, **kwargs) -> HttpResponse:
+        user = request.user
+        data = (
+            (request.body).decode("utf-8")
+            if isinstance(request.body, bytes)
+            else request.body
+        )
+        if isinstance(data, str):
+            data = json.loads(data)
+        response = Response(status=status.HTTP_401_UNAUTHORIZED)
+        if user.is_active and user.is_authenticated and isinstance(data, dict):
+            try:
+                # TASK
+                def run_in_thread(pk: str, data_dict: dict) -> bool:
+                    """
+                    Through this function will be change the properties of user to the Redis 1
+                    :param pk:
+                    :param data_dict:
+                    :return:
+                    """
+                    # create the new even loop
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        task_list = []
+                        # Build of task
+                        if IsAll().has_permission(request):
+                            # FOR ADMINISTRATION
+                            for k, v in data_dict.items():
+                                task = loop.create_task(
+                                    self.redis_person_inactive(pk, k, v)
+                                )
+                                task_list.append(task)
+                        keys_list = [
+                            "id",
+                            "username",
+                            "is_staff",
+                            "is_superuser",
+                            "is_active",
+                            "date_joined",
+                            "balance",
+                            "is_verified",
+                            "category",
+                            "verification_code",
+                            "created_at",
+                            "is_sent",
+                        ]  # Only  IsAll() can change this data
+                        result_list = [
+                            elem for elem in list(data_dict.keys()) if elem in keys_list
+                        ]
+                        if (
+                            len(result_list) > 0
+                            and not IsAll().has_permission(request)
+                            and not IsReader().has_permission(request)
+                        ):
+
+                            log.error(
+                                "%s: ERROR => %s"
+                                % (
+                                    UserViews.__class__.__name__
+                                    + "."
+                                    + UserViews.update.__name__,
+                                    "You have not rights!",
+                                )
+                            )
+                            raise ValueError(
+                                "%s: ERROR => %s"
+                                % (
+                                    UserViews.__class__.__name__
+                                    + "."
+                                    + UserViews.update.__name__,
+                                    "You have not rights!",
+                                )
+                            )
+                        elif (
+                            len(result_list) == 0
+                            and not IsAll().has_permission(request)
+                            and not IsReader().has_permission(request)
+                        ):
+                            for k, v in data_dict.items():
+                                v = self.get_hash_password(v) if k == "password" else v
+                                task = loop.create_task(
+                                    self.redis_person_inactive(pk, k, v)
+                                )
+                                task_list.append(task)
+                        # Run the list of tasks
+                        loop.run_until_complete(asyncio.gather(*task_list))
+                    except Exception as error:
+                        log.error(
+                            "%s: ERROR => %s"
+                            % (
+                                UserViews.__class__.__name__
+                                + "."
+                                + UserViews.update.__name__,
+                                error.args[0],
+                            )
+                        )
+                        raise ValueError(
+                            "%s: ERROR => %s"
+                            % (
+                                UserViews.__class__.__name__
+                                + "."
+                                + UserViews.update.__name__,
+                                error.args[0],
+                            )
+                        )
+                    finally:
+                        loop.close()
+
+                threading.Thread(target=run_in_thread, args=(pk, data)).start()
+            except Exception as error:
+                response.data = {"data": "ERROR => %s" % error.args[0]}
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return response
+            # Then
+            response.status_code = status.HTTP_200_OK
+            return response
+        response.data = {
+            "data": "Something what wrong. Check the User active or authenticated, data not correct."
+        }
+        return response
+
+    @swagger_autho_shema(
+        operation_description="""
+        Methos: DELETE
+        PATHNAME: person/<str:pk>/
+        ---
+        additioanal parameters:
+        - name: session_user
+          in: cookie
+          required: true
+          type: string
+          example: "nH2qGiehvEXjNiYqp3bOVtAYv...."
+          description: "This token has a prefix. It's 'Bearer ' - beginning of token.",
+        """,
+        tags=["person"],
+        responses={
+            200: "Ok",
+            404: "Something what wrong. Check the 'pk' from your pathname.",
+            500: "< text_of_error >",
+            401: "Something what wrong. Check the User active or authenticated",
+        },
+        manual_parameters=[
+            openapi.Parameter(
+                required=True,
+                name="id",
+                title="pk",
+                in_=openapi.IN_PATH,
+                type=openapi.TYPE_STRING,
+                example="12",
+            ),
+            openapi.Parameter(
+                required=True,
+                name="X-CSRFToken",
+                title="X-CSRFToken",
+                in_=openapi.IN_HEADER,
+                type=openapi.TYPE_STRING,
+                example="nH2qGiehvEXjNiYqp3bOVtAYv....",
+            ),
+        ],
+    )
+    async def delete(self, request, pk, **kwargs) -> HttpResponse:
+        """
+        This function delete the user's data from the:
+        - relation da;
+        - redis 1;
+        - redis 0.
+        :param request:
+        :param str pk: This is index of user which we will be remove
+        :param kwargs: None
+        :return:
+        """
+        user = request.user
+        response = Response(status=status.HTTP_401_UNAUTHORIZED)
+        message = "%s: ERROR => " % (
+            UserViews.__class__.__name__ + "." + self.delete.__name__
+        )
+        result_regex = re.compile(r"[0-9]+").search(pk)
+        if not result_regex or (result_regex and len(result_regex[0]) != len(pk)):
+            response.data = {
+                "data": "Something what wrong. Check the 'pk' from your pathname."
+            }
+            response.status_code = status.HTTP_404_NOT_FOUND
+            return response
+
+        if IsAll().has_permission(request) or (user.is_active and user.id == int(pk)):
+            try:
+                # DELER FROM REDIS 1 & REDIS 0.
+                # It's from redis 1
+                def remove_from_redis_one(pk: str) -> bool:
+                    """Here, user data by 'pk' is removeing from the db redis's 1"""
+                    redis_key = f"user:{pk}:person"
+                    client = RedisOfPerson()
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
+                    try:
+                        task = loop.create_task(client.async_del_cache_user(redis_key))
+                        loop.run_until_complete(task)
+                    except Exception as error:
+                        message += error.args[0]
+                        log.error(message)
+                    finally:
+                        loop.close()
+
+                def remove_from_redis_second(pk: str) -> bool:
+                    """Here, user data by 'pk' is removeing from the db redis's 0"""
+                    redis_key = f"user:{pk}:session"
+                    client = RedisOfPerson(db=0)
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+
+                    try:
+                        task = loop.create_task(client.async_del_cache_user(redis_key))
+                        loop.run_until_complete(task)
+                    except Exception as error:
+                        message += error.args[0]
+                        log.error(message)
+                    finally:
+                        loop.close()
+
+                threading.Thread(target=remove_from_redis_one, args=(pk,)).start()
+                threading.Thread(target=remove_from_redis_second, args=(pk)).start()
+            except Exception as error:
+                message += error.args[0]
+                log.error(message)
+                response.data = {"data": message}
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return response
+
+            try:
+                # DELER FROM RELATION DB.
+                [await view.adelete() async for view in Users.objects.filter(pk=pk)]
+            except Exception as error:
+                message += error.args[0]
+                log.error(message)
+                response.data = {"data": message}
+                response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+                return response
+            response.data = {"data": "OK"}
+            response.status_code = status.HTTP_200_OK
+            return response
+
+        response.data = {
+            "data": "Something what wrong. Check the User active or authenticated"
+        }
+        response.status_code = status.HTTP_401_UNAUTHORIZED
         return response
 
     @staticmethod
@@ -1115,7 +1588,8 @@ class UserViews(ViewSet):
         Now will be saving on the 27 hours.
         'task_user_from_cache' task wil be to upgrade postgres at ~ am 01:00
         Timetable look the 'project.celery.app.base.Celery.conf'
-        :param str key: This is key element, by key look up where it will be saved. Example: "user:25:person"
+        :param str key: This is key element, by key look up where it will be saved. Example:
+         WHere is key "user:25:person" and value dictionary or key is "user:25:session" and value < user_object > from relation db.
 
         :param kwargs: {'user': < user_object >, "db": < integer it's 0 or 1>}
         :return: bool. If returning the True, it means all OK/ If the False, - not OK and look the log's file.
@@ -1150,3 +1624,112 @@ class UserViews(ViewSet):
             return False
         finally:
             await client.aclose()
+
+    @staticmethod
+    async def redis_person_inactive(
+        pk: str, k_prop: str, v_prop: Union[str, int, bool]
+    ) -> bool:
+        """
+        This is universality the function/method for changing one line from db Redis 0 or db Redis 1.
+        Here, properties 'user.is_active' we appropriate the value False into Redis 1 the  'user:< pk:str >:person' (Redis 0 the 'user:< pk:str >:session'). It's when user comes out from your profile
+        :param k_prop: This is properties which the key need change.
+        :param v_prop: This is value which we  appropriate to the 'k_prop'.
+        :param pk: This is index of user which change yourself status
+        :return: boolean
+        """
+        pk_regex = re.compile(r"[0-9]+")
+        if (
+            not pk_regex.match(pk)
+            or (pk_regex.match(pk) and pk_regex.match(pk).regs[0][1] != len(pk))
+            and (not v_prop or not k_prop)
+        ):
+            log.error(
+                "%s: Check the keys from entry-point. PK: %s, K_PROP: %s, V_PROP: %s"
+                % (
+                    UserViews.__class__.__name__
+                    + "."
+                    + UserViews.redis_person_inactive.__name__,
+                    pk,
+                    k_prop,
+                    v_prop,
+                )
+            )
+            raise KeyError(
+                "%s: Check the keys from entry-point" % UserViews.__class__.__name__
+                + "."
+                + UserViews.redis_person_inactive.__name__
+            )
+        client_person = RedisOfPerson(db=1)
+        async for key_one in iterator_get_person_cache(client_person):
+            # Here is a Radis
+            try:
+                caches_user = await client_person.async_get_cache_user(key_one)
+                # check username
+                if caches_user and isinstance(caches_user, dict):
+                    # We do actively for user when found his to the cache.
+                    caches_user[k_prop] = v_prop
+                    await client_person.async_set_cache_user(
+                        f"user:{pk}:person", user=caches_user
+                    )
+                    return True
+            except Exception as error:
+                log.error(
+                    "%s: Error => %s"
+                    % (
+                        UserViews.__class__.__name__
+                        + "."
+                        + UserViews.redis_person_inactive.__name__,
+                        error,
+                    )
+                )
+                raise ValueError(
+                    "%s: Error => %s"
+                    % (
+                        UserViews.__class__.__name__
+                        + "."
+                        + UserViews.redis_person_inactive.__name__,
+                        error,
+                    )
+                )
+            finally:
+                await client_person.aclose()
+        return False
+
+    @staticmethod
+    async def redis_session_closing(pk: str) -> bool:
+        """
+        Here, deleting the  'user:< pk:str >:session' when user comes out from your profile
+        :param pk: This is index of user which change yourself status
+        :return: Unicorn[boolean]
+        """
+        regex = re.compile(r"[0-9]+")
+        if not regex.match(pk) or (
+            regex.match(pk) and regex.match(pk).regs[0][1] != len(pk)
+        ):
+            log.error(
+                "%s: Invalid pk" % UserViews.__class__.__name__
+                + "."
+                + UserViews.redis_session_closing.__name__
+            )
+            raise KeyError(
+                "%s: Invalid pk" % UserViews.__class__.__name__
+                + "."
+                + UserViews.redis_session_closing.__name__
+            )
+        client_session = RedisOfPerson(db=0)
+        try:
+            await client_session.async_del_cache_user(f"user:{pk}:session")
+            return True
+        except Exception as error:
+            log.error(
+                "%s: Error => %s"
+                % (
+                    UserViews.__class__.__name__
+                    + "."
+                    + UserViews.redis_session_closing.__name__,
+                    error.args[0],
+                )
+            )
+            raise error
+        finally:
+            await client_session.aclose()
