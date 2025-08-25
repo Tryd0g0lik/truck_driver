@@ -22,3 +22,4 @@ redis-cli>=1.0.1
 drf-spectacular==0.28.0
 drf-yasg==1.21.10
 daphne>=4.0.0
+keyring>=24.0.0
