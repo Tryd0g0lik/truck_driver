@@ -1,0 +1,707 @@
+{
+	"info": {
+		"_postman_id": "00b05d39-7784-453c-b469-5ba976009127",
+		"name": "TruckDriver",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "25957669"
+	},
+	"item": [
+		{
+			"name": "csrf_token",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"\r",
+							"// function getOneCookie() {\r",
+							"//     const cookies = document.cookie;\r",
+							"//     // key = key ? encodeKey(\"csrftoken\") : encodeKey();\r",
+							"//     const parts = `; ${cookies}`.split(`; csrftoken=`);\r",
+							"//     if (parts.length === 2) {\r",
+							"//       return parts.pop()?.split(';').shift();\r",
+							"//     }\r",
+							"//     return null;\r",
+							"//   };\r",
+							"// try{\r",
+							"//     csrftoken_cookie = pm.cookies.get(\"csrftoken\").\r",
+							"//     // csrftoken_cookie = getOneCookie(\"csrftoken\");\r",
+							"//     console.log(\"GET the csrfToken: \", csrftoken_cookie);\r",
+							"//     pm.collectionVariables.set(\"csrfToken\", csrftoken_cookie);\r",
+							"//     console.log(\"csrftoken_cookie - was savied\");\r",
+							"// }catch(error){\r",
+							"//     console.log(\"ERROR => \", error);\r",
+							"// }\r",
+							"\r",
+							"// try {\r",
+							"//     const response = await pm.sendRequest({\r",
+							"//         url: \"https://postman-echo.com/get\",\r",
+							"//         method: \"GET\"\r",
+							"//     });\r",
+							"\r",
+							"//     console.log(response.json());\r",
+							"// } catch (err) {\r",
+							"//     console.error(err);\r",
+							"// }\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 201\", function () {\r",
+							"    pm.expect(pm.response.code).to.equal(201);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response has the required field csrfToken\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData).to.have.property('csrfToken').that.is.a('string');\r",
+							"});\r",
+							"\r",
+							"pm.test(\"CsrfToken is a non-empty string\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData).to.be.an('object');\r",
+							"    pm.expect(responseData.csrfToken).to.exist.and.to.be.a('string').and.to.have.lengthOf.at.least(1, \"CsrfToken should not be empty\");\r",
+							"});\r",
+							"\r",
+							"// pm.test(\"Response time is less than 200ms\", function () {\r",
+							"//     pm.expect(pm.response.responseTime).to.be.below(200);\r",
+							"// });\r",
+							"\r",
+							"pm.test(\"Response content type is application/json\", function () {\r",
+							"    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');\r",
+							"});\r",
+							"\r",
+							"// Removed redundant tests\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"url": {
+					"raw": "{{url_basis}}/api/auth/csrftoken/",
+					"host": [
+						"{{url_basis}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"csrftoken",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "user_active",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.request.user = {\"is_active\": true};"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Fixed JSON object reference and check for token_access",
+							"pm.test('response should be return the \"token_access\". It need save', ()=>{",
+							"    console.log(\"START \")",
+							"    console.log(\"response\",pm.response.json()[0].data )",
+							"    pm.expect(pm.response.json()[0].data).to.have.length(2);",
+							"    console.log(\"RESPONSE pm.response.json()[0].data[0]: \", pm.response.json()[0].data[0])",
+							"    pm.expect(pm.response.json()[0].data[0]).to.have.property('token_access');",
+							"    ",
+							"    // const data = pm.response.json().data;",
+							"    if (pm.response.json()[0].data[0]){",
+							"        access_token = pm.response.json()[0].data[0].token_access;",
+							"        pm.collectionVariables.set(\"access_token\", access_token);",
+							"        console.log(\"the END\");",
+							"    }",
+							"})",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Content-Type is present\", function () {",
+							"    pm.response.to.have.header(\"Content-Type\");",
+							"});",
+							"",
+							"pm.test(\"Response time is less than 1000ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});",
+							"",
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([201, 202, 200]);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-CSRFToken",
+						"value": "{{csrfToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "username",
+							"value": "Sergey",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "123456789",
+							"type": "text"
+						},
+						{
+							"key": "email",
+							"value": "work80@mail.ru",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "{{url_basis}}/api/auth/person/0/active/",
+					"host": [
+						"{{url_basis}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"person",
+						"0",
+						"active",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "user_inactive",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 204\", function () {\r",
+							"    pm.expect(pm.response.code).to.eql(204);\r",
+							"});\r",
+							"\r",
+							"\r",
+							"pm.test(\"Response time is less than 200ms\", function () {\r",
+							"    pm.expect(pm.response.responseTime).to.be.below(200);\r",
+							"});\r",
+							"\r",
+							"\r",
+							"pm.test(\"Response body is empty for a successful logout\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData).to.be.an('object').that.is.empty;\r",
+							"});\r",
+							"\r",
+							"\r",
+							"pm.test(\"Response schema is as expected\", function () {\r",
+							"    const responseData = pm.response.json();\r",
+							"    \r",
+							"    pm.expect(responseData).to.be.an('object');\r",
+							"    pm.expect(responseData).to.not.have.any.keys('email', 'name', 'address', 'city', 'state', 'phone', 'age');\r",
+							"});\r",
+							"\r",
+							"\r",
+							"pm.test(\"Subsequent requests return an unauthorized status code\", function () {\r",
+							"    pm.expect(pm.response.code).to.eql(401);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "X-CSRFToken",
+						"value": "{{CSRFToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{url_basis}}/api/auth/person/87/inactive/",
+					"host": [
+						"{{url_basis}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"person",
+						"87",
+						"inactive",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Authenticate",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url_basis}}/activate/Sergey_null_MzSS4C6FWiCakl9ZtQ_x3QbJHbLokXOdKU03sYQkxsk/",
+					"host": [
+						"{{url_basis}}"
+					],
+					"path": [
+						"activate",
+						"Sergey_null_MzSS4C6FWiCakl9ZtQ_x3QbJHbLokXOdKU03sYQkxsk",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "user_register",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.request.user = {\"is_active\": true};\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Body is correct\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('data');",
+							"    pm.expect(jsonData['data']).to.equal(\"OK\")",
+							"});",
+							"pm.test(\"Response time is less than 200ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-CSRFToken",
+						"value": "{{CSRFToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "username",
+							"value": "Freqq",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "123456789",
+							"type": "text"
+						},
+						{
+							"key": "email",
+							"value": "work80@mail.ru",
+							"type": "text"
+						},
+						{
+							"key": "category",
+							"value": "DRIVER",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{url_basis}}/api/auth/person/",
+					"host": [
+						"{{url_basis}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"person",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "users_in_list",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.request.user = {\"is_active\": true};\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Body is correct\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('data');",
+							"    pm.expect(jsonData['data']).to.equal(\"OK\")",
+							"});",
+							"pm.test(\"Response time is less than 200ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url_basis}}/api/auth/person/",
+					"host": [
+						"{{url_basis}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"person",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "user_profile",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"pm.request.user = {\"is_active\": true};\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Body is correct\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('data');",
+							"    pm.expect(jsonData['data']).to.equal(\"OK\")",
+							"});",
+							"pm.test(\"Response time is less than 200ms\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{url_basis}}/api/auth/person/87/",
+					"host": [
+						"{{url_basis}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"person",
+						"87",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "user_update",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"try {\r",
+							"    const response = await pm.sendRequest({\r",
+							"        url: `http://127.0.0.1:8000/api/auth/csrftoken/`,\r",
+							"        method: \"GET\"\r",
+							"    });\r",
+							"\r",
+							"    // console.log(response.json());\r",
+							"    pm.sendRequest(\r",
+							"        response, (err, response) => {\r",
+							"            if (err){\r",
+							"                console.log(\"Ошибка при получении токена:\", err)\r",
+							"            }\r",
+							"            // const result = response.json()\r",
+							"            console.log(\"Получили токен\")\r",
+							"            console.log(response)\r",
+							"            // pm.collectionVariables.set(\"csrfToken\", response[\"csrfToken\"])\r",
+							"        }\r",
+							"    );\r",
+							"\r",
+							"} catch (err) {\r",
+							"    console.error(err);\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful PUT request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "X-CSRFToken",
+						"value": "{{CSRFToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"username\": \"Serge\",\n    \"is_staff\": true\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url_basis}}/api/auth/person/87/",
+					"host": [
+						"{{url_basis}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"person",
+						"87",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "user_delete",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// try {\r",
+							"//     const response = await pm.sendRequest({\r",
+							"//         url: `http://127.0.0.1:8000/api/auth/csrftoken/`,\r",
+							"//         method: \"GET\"\r",
+							"//     });\r",
+							"\r",
+							"//     // console.log(response.json());\r",
+							"//     pm.sendRequest(response, (err, response) => {\r",
+							"//             if (err){\r",
+							"//                 console.log(\"Ошибка при получении токена:\", err)\r",
+							"//             }\r",
+							"//             // const result = response.json()\r",
+							"//             console.log(\"Получили токен\")\r",
+							"//             console.log(response)\r",
+							"//         pm.collectionVariables.set(\"csrfToken\", response.json().csrfToken);\r",
+							"//         }\r",
+							"//     );\r",
+							"\r",
+							"// } catch (err) {\r",
+							"//     console.error(err);\r",
+							"// }\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful DELETE request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 202, 204]);",
+							"});",
+							"",
+							"pm.test(\"Content-Type is present\", function () {",
+							"    pm.response.to.have.header(\"Content-Type\");",
+							"});",
+							"",
+							"pm.test(\"Response time is less than 1 second\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-CSRFToken",
+						"value": "{{CSRFToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{url_basis}}/api/auth/person/89/",
+					"host": [
+						"{{url_basis}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"person",
+						"89",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

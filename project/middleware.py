@@ -4,7 +4,7 @@ import logging
 import asyncio
 from django.http import HttpRequest
 from django.contrib.auth.models import AnonymousUser
-from requests.packages import target
+
 
 from person.binaries import Binary
 from person.models import Users
