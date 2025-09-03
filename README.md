@@ -272,6 +272,7 @@ Now, email's message we can see only inside of console or truck_driver doker's l
 ![docker_logs_truck_driver](./img/docker_logs_truck_driver.png)
 
 
+
 ----
 ## OpenAPI
 - '`GET`' "`{{url_basis}}/api/auth/person/`" - Get the list of records from the person db and for user admin 
@@ -298,6 +299,7 @@ The root of project contain the 'swagger' file.
 ----
 
 ## Local URL
+* "`admin/`"
 * "`register/`" page for registration;
 * "`login/`" page for authorisation;
 * "`raport/`" page contain the map and form for report.

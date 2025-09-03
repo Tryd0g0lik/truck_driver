@@ -32,8 +32,18 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 # """"DEBUG""""
 DEBUG = True
-if DEBUG:  # Note: Only, develop mode
+
+SECURE_SSL_REDIRECT = False # т.к. запуск на http:
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'http')
+if DEBUG:
+    SECURE_BROWSER_XSS_FILTER = False
+    SECURE_CONTENT_TYPE_NOSNIFF = False
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
     SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+    WHITENOISE_MAX_AGE = 0
+    WHITENOISE_USE_FINDERS = False
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
@@ -63,6 +73,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     'corsheaders.middleware.CorsMiddleware',
     "django.middleware.common.CommonMiddleware",
@@ -72,6 +83,12 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'project.middleware.RedisAuthMiddleware',
 ]
+
+# '''WHITEnOISE'''
+# for a static files in production
+# https://whitenoise.readthedocs.io/en/stable/django.html
+WHITENOISE_MAX_AGE = 31536000  # static cache by 1 year
+WHITENOISE_USE_FINDERS = True
 
 ROOT_URLCONF = "project.urls"
 
@@ -187,6 +204,7 @@ SESSION_COOKIE_AGE = 86400
 CORS_ORIGIN_ALLOW_ALL = True
 # Here, we allow the URL list for publicated
 CORS_ALLOWED_ORIGINS = [
+    f"http://{DB_TO_RADIS_HOST}",
     "http://127.0.0.1:8000",
     f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
     "http://0.0.0.0:8000",
@@ -196,6 +214,7 @@ CORS_ALLOWED_ORIGINS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-CSRF_TRUSTED_ORIGINS
 # This is list from private of URL
 CSRF_TRUSTED_ORIGINS = [
+    f"http://{DB_TO_RADIS_HOST}",
     "http://127.0.0.1:8000",
     f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
     "http://0.0.0.0:8000",

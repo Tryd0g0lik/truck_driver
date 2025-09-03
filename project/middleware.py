@@ -1,4 +1,3 @@
-import threading
 import base64
 import logging
 import asyncio
@@ -67,25 +66,29 @@ class RedisAuthMiddleware:
 
     def __call__(self, request: HttpRequest) -> HttpRequest:
         """
+        TODO: Create the function by updating the 'token_access'.
         Here is we checking the user's session key in cookies.By this key we will get the cache of user's object.
         The cache of user's object it is JSON str 'session: {"user": < binary code Users's object >}' < === > 'cockie_key: {key: binary data}'.
         :param HttpRequest request:
         :return:
         """
         try:
+            token_access = request.COOKIES.get("token_access")
+            token_refresh = request.COOKIES.get("token_refresh")
+            session_user = token_access if token_access else token_refresh
             log.info(
-                "%s: SESSION_KEY 'session_user': %s"
+                "%s: SESSION_KEY 'token_access': %s"
                 % (
                     RedisAuthMiddleware.__class__.__name__
                     + "."
                     + self.async_get_user.__name__,
-                    request.COOKIES.get("session_user"),
+                    request.COOKIES.get(session_user),
                 )
             )
-            if request.COOKIES and request.COOKIES.get("session_user"):
+            if request.COOKIES and request.COOKIES.get(session_user):
                 if not hasattr(request, "user"):
                     request.user = AnonymousUser()
-                session_key = request.COOKIES["session_user"]
+                session_key = request.COOKIES[session_user]
                 # self.async_get_user(session_key)
                 asyncio.run(self.async_get_user(request, session_key))
 

@@ -968,7 +968,7 @@ class UserViews(ViewSet):
                                 "token_access": (
                                     result_list[0] if len(result_list) > 0 else ""
                                 ),
-                                "live_time": access_time,
+                                "live_time": access_time * 30,
                             },
                             "refresh": {
                                 "token_refresh": (
