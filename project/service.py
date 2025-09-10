@@ -1,3 +1,7 @@
+"""
+project/service.py
+"""
+
 import asyncio
 from typing import Any
 from collections.abc import Callable

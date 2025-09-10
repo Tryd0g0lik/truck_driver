@@ -1,3 +1,7 @@
+"""
+person/urls_api.py
+"""
+
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
@@ -28,6 +32,11 @@ urlpatterns = [
     path(
         "binary/str_to_binary/",
         BinaryViews.as_view({"post": "str_to_binary"}),
+        name="str_to_binary",
+    ),
+    path(
+        "binary/binary_to_object/",
+        BinaryViews.as_view({"post": "binary_to_object"}),
         name="str_to_binary",
     ),
 ]

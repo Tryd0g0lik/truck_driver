@@ -1,3 +1,7 @@
+"""
+person/management/commands/watcher.py
+"""
+
 import logging
 import os
 import subprocess
@@ -9,7 +13,6 @@ from watchfiles import watch, BaseFilter
 from project.settings import BASE_DIR
 
 
-# os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.settings")
 class Command(BaseCommand, BaseFilter):
     def handle(self, *args, **options):
         self.ignore_dirs = (

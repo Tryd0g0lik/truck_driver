@@ -1,3 +1,7 @@
+"""
+person/management/commands/server.py
+"""
+
 import logging
 import subprocess
 

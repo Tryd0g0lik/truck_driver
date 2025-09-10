@@ -1,3 +1,7 @@
+"""
+person/views.py
+"""
+
 import os
 
 from django.shortcuts import render

@@ -1,3 +1,7 @@
+"""
+person/views_api/users_views.py
+"""
+
 import base64
 import json
 import threading
@@ -29,7 +33,7 @@ from django.contrib.auth.models import Group
 from person.apps import signal_user_registered
 from person.cookies import Cookies
 from person.interfaces import U
-from person.permissions import is_all, is_manipulate, is_reader
+from person.permissions import is_all, is_reader
 from person.tasks.task_cache_hew_user import task_postman_for_user_id
 from person.models import Users
 from person.hasher import Hasher

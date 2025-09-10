@@ -1,4 +1,9 @@
+"""
+project/middleware.py
+"""
+
 import base64
+
 import logging
 import asyncio
 from django.http import HttpRequest

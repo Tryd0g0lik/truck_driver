@@ -1,14 +1,17 @@
+"""
+person/tasks/task_cache_hew_user.py
+"""
+
 import json
 import logging
 import os
-from http.client import responses
 from typing import Union
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
 from redis import Redis, TimeoutError
 
-from dotenv_ import DB_TO_RADIS_CACHE_USERS, DB_TO_RADIS_PORT, DB_TO_RADIS_HOST
+from dotenv_ import DB_TO_RADIS_CACHE_USERS, DB_TO_RADIS_HOST
 from logs import configure_logging
 from person.interfaces import TypeUser
 from person.models import Users

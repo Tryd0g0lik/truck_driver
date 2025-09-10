@@ -6,16 +6,17 @@ from django.contrib.auth.models import Group
 class IsActive(BasePermission):
     """allows access only activated"""
 
-    def has_permissions(self, request: Request):
+    def has_permission(self, request: Request, view=None) -> bool:
         return request.user and request.user.is_authenticated and request.user.is_active
 
 
 class IsAll(BasePermission):
     """Allows access only for admin and owner"""
 
-    def has_permissions(self, request: Request) -> bool:
+    def has_permission(self, request: Request, view=None) -> bool:
+        pass
         return (
-            IsActive().has_permissions(request)
+            IsActive().has_permission(request)
             and request.user.is_staff
             and (
                 request.user.is_superuser
@@ -27,9 +28,9 @@ class IsAll(BasePermission):
 class IsReader(BasePermission):
     """allows access only for read"""
 
-    def has_permissionps(self, request: Request) -> bool:
+    def has_permissionps(self, request: Request, view=None) -> bool:
         return (
-            IsActive().has_permissions(request)
+            IsActive().has_permission(request)
             and not request.user.is_superuser
             and (
                 request.user.is_staff
@@ -41,9 +42,9 @@ class IsReader(BasePermission):
 class IsOwnerRaport(BasePermission):
     """ "Allows access only for the pruck-drivers"""
 
-    def has_permissions(self, request: Request) -> bool:
+    def has_permission(self, request: Request, view=None) -> bool:
         return (
-            IsActive().has_permissions(request)
+            IsActive().has_permission(request)
             and request.user.geroups.filter(
                 name__in=["DRIVER", "Truck driver"]
             ).axists()
@@ -53,14 +54,14 @@ class IsOwnerRaport(BasePermission):
 class IsManipulate(BasePermission):
     """Allows access only for managers"""
 
-    def has_permissions(self, request: Request) -> bool:
+    def has_permission(self, request: Request, view=None) -> bool:
         return (
-            IsActive().has_permissions(request)
+            IsActive().has_permission(request)
             and request.user.groups.filter(name__in=["MANAGER", "Manager"]).exists()
         )
 
 
-is_active = IsActive.has_permission
-is_all = IsAll.has_permission
-is_reader = IsReader.has_permission
-is_ownerraport = IsOwnerRaport.has_permission
+is_active = IsActive().has_permission
+is_all = IsAll().has_permission
+is_reader = IsReader().has_permission
+is_ownerraport = IsOwnerRaport().has_permission

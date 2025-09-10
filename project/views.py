@@ -1,3 +1,7 @@
+"""
+project/views.py
+"""
+
 import logging
 from django.http import HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
