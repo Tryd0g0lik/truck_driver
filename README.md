@@ -1,7 +1,6 @@
-[Для InstallBiz](https://github.com/Tryd0g0lik/truck_driver/blob/dev/InstallBiz_2025-08-19.md) 2028-08-19
 
-[Front](https://github.com/Tryd0g0lik/truck_driver_front)
-
+- [Front](https://github.com/Tryd0g0lik/truck_driver_front)
+- [FastAPI Backend Map](https://github.com/Tryd0g0lik/truck_driver_app_microservice)
 
 My [work on the HTTP](http://83.166.245.209/). If you want? i can relocate of files to the "`Vercel.app`".
 
@@ -236,6 +235,8 @@ py manage.py collectstatic
 py manage.py makemigrations
 py manage.py migrate
 py manage.py runserver
+daphne project.asgi:application # mode: develop & poduction 
+git log --all --oneline --graph --decorate --date=format:'%Y-%m-%d %H:%M:%S' --pretty=format:'%C(yellow)%h%C(auto)%d %C(white)%cd%Creset %s' # история развития проекта
 ```
 
 ### Note:
@@ -286,7 +287,8 @@ But, we have and [Fron path](https://github.com/Tryd0g0lik/truck_driver_front).
 - '`GET`' "`{{url_basis}}/api/auth/csrftoken/`" - Get csrf-token into the cookie
 - '`PUT`' "`{{url_basis}}/api/auth/person/<str:pk>/`" Change data in redis. 'pk' is user's index.
 - '`DELETE`' "`{{url_basis}}/api/auth/person/<str:pk>/`" Removing the user's data from everyone db. 
-**BINARY**
+
+**BINARY**\
 - '`POST`' "`{{url_basis}}/api/auth/binary/binary_to_object/`" Receive object from the binary data   
 - '`POST`' "`{{url_basis}}/api/auth/binary/str_to_binary/`" Receive binary data from the string   
 ### Swagger
