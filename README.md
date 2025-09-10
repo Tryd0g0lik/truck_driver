@@ -286,6 +286,9 @@ But, we have and [Fron path](https://github.com/Tryd0g0lik/truck_driver_front).
 - '`GET`' "`{{url_basis}}/api/auth/csrftoken/`" - Get csrf-token into the cookie
 - '`PUT`' "`{{url_basis}}/api/auth/person/<str:pk>/`" Change data in redis. 'pk' is user's index.
 - '`DELETE`' "`{{url_basis}}/api/auth/person/<str:pk>/`" Removing the user's data from everyone db. 
+**BINARY**
+- '`POST`' "`{{url_basis}}/api/auth/binary/binary_to_object/`" Receive object from the binary data   
+- '`POST`' "`{{url_basis}}/api/auth/binary/str_to_binary/`" Receive binary data from the string   
 ### Swagger
 **Example of redoc**\
 ![redoc](./img/redoc.png)
