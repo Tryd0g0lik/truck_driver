@@ -29,7 +29,7 @@ from django.contrib.auth.models import Group
 from person.apps import signal_user_registered
 from person.cookies import Cookies
 from person.interfaces import U
-from person.permissions import IsAll, IsManipulate, IsReader
+from person.permissions import is_all, is_manipulate, is_reader
 from person.tasks.task_cache_hew_user import task_postman_for_user_id
 from person.models import Users
 from person.hasher import Hasher
@@ -231,8 +231,8 @@ class UserViews(ViewSet):
             ]
         ```
         """
-        user: U | AnonymousUser = request.user
-        if IsAll().has_permission(request):
+
+        if is_all(request):
             try:
                 queryset_list = [views async for views in Users.objects.all()]
                 serializer = await sync_for_async(
@@ -402,6 +402,7 @@ class UserViews(ViewSet):
             UserViews.__class__.__name__ + "." + self.delete.__name__
         )
         result_regex = re.compile(r"[0-9]+").search(pk)
+        response = Response()
         if not result_regex or (result_regex and len(result_regex[0]) != len(pk)):
             response.data = {
                 "data": "Something what wrong. Check the 'pk' from your pathname."
@@ -409,7 +410,7 @@ class UserViews(ViewSet):
             response.status_code = status.HTTP_404_NOT_FOUND
             return response
 
-        if await sync_for_async(IsAll().has_permission, request):
+        if await sync_for_async(is_all, request):
             try:
                 users_list = [view async for view in Users.objects.filter(pk=int(pk))]
                 if len(users_list) == 0:
@@ -423,7 +424,7 @@ class UserViews(ViewSet):
                     status=status.HTTP_200_OK,
                 )
             except Exception as error:
-                log.error(manage + error.args[0])
+                log.error(message + error.args[0])
                 return Response(
                     {"data": error.args.__getitem__(0)},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -781,7 +782,9 @@ class UserViews(ViewSet):
             )
         ],
     )
-    async def active(self, request: HttpRequest, pk: str="0", **kwargs) -> HttpResponse:
+    async def active(
+        self, request: HttpRequest, pk: str = "0", **kwargs
+    ) -> HttpResponse:
         from person.tasks.task_user_is_login import task_user_login
 
         user = request.user if request.user else AnonymousUser()
@@ -1318,7 +1321,7 @@ class UserViews(ViewSet):
                     try:
                         task_list = []
                         # Build of task
-                        if IsAll().has_permission(request):
+                        if is_all(request):
                             # FOR ADMINISTRATION
                             for k, v in data_dict.items():
                                 task = loop.create_task(
@@ -1344,8 +1347,8 @@ class UserViews(ViewSet):
                         ]
                         if (
                             len(result_list) > 0
-                            and not IsAll().has_permission(request)
-                            and not IsReader().has_permission(request)
+                            and not is_all(request)
+                            and not is_reader(request)
                         ):
 
                             log.error(
@@ -1368,8 +1371,8 @@ class UserViews(ViewSet):
                             )
                         elif (
                             len(result_list) == 0
-                            and not IsAll().has_permission(request)
-                            and not IsReader().has_permission(request)
+                            and not is_all(request)
+                            and not is_reader(request)
                         ):
                             for k, v in data_dict.items():
                                 v = self.get_hash_password(v) if k == "password" else v
@@ -1477,7 +1480,7 @@ class UserViews(ViewSet):
             response.status_code = status.HTTP_404_NOT_FOUND
             return response
 
-        if IsAll().has_permission(request) or (user.is_active and user.id == int(pk)):
+        if is_all(request) or (user.is_active and user.id == int(pk)):
             try:
                 # DELER FROM REDIS 1 & REDIS 0.
                 # It's from redis 1
@@ -1492,6 +1495,13 @@ class UserViews(ViewSet):
                         task = loop.create_task(client.async_del_cache_user(redis_key))
                         loop.run_until_complete(task)
                     except Exception as error:
+                        message = "%s: ERROR => " % (
+                            UserViews.__class__.__name__
+                            + "."
+                            + self.delete.__name__
+                            + "."
+                            + remove_from_redis_one.__name__
+                        )
                         message += error.args[0]
                         log.error(message)
                     finally:
@@ -1508,6 +1518,13 @@ class UserViews(ViewSet):
                         task = loop.create_task(client.async_del_cache_user(redis_key))
                         loop.run_until_complete(task)
                     except Exception as error:
+                        message = "%s: ERROR => " % (
+                            UserViews.__class__.__name__
+                            + "."
+                            + self.delete.__name__
+                            + "."
+                            + remove_from_redis_second.__name__
+                        )
                         message += error.args[0]
                         log.error(message)
                     finally:
@@ -1565,13 +1582,13 @@ class UserViews(ViewSet):
 
     @staticmethod
     def validate_username(value: str) -> None | object:
-        regex = re.compile(r"(^[a-zA-Z]\w{3,50}_{0,2})")
-        return regex.match(value)
+        _regex = re.compile(r"(^[a-zA-Z]\w{3,50}_{0,2})")
+        return _regex.match(value)
 
     @staticmethod
     def validate_password(value: str) -> None | object:
-        regex = re.compile(r"([\w%]{9,255})")
-        return regex.match(value)
+        _regex = re.compile(r"([\w%]{9,255})")
+        return _regex.match(value)
 
     @staticmethod
     async def _async_caching(key: str, **kwargs) -> bool:
@@ -1702,9 +1719,9 @@ class UserViews(ViewSet):
         :param pk: This is index of user which change yourself status
         :return: Unicorn[boolean]
         """
-        regex = re.compile(r"[0-9]+")
-        if not regex.match(pk) or (
-            regex.match(pk) and regex.match(pk).regs[0][1] != len(pk)
+        _regex = re.compile(r"[0-9]+")
+        if not _regex.match(pk) or (
+            _regex.match(pk) and _regex.match(pk).regs[0][1] != len(pk)
         ):
             log.error(
                 "%s: Invalid pk" % UserViews.__class__.__name__

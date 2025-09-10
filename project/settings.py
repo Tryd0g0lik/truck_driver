@@ -17,10 +17,12 @@ from dotenv_ import (DB_ENGINE, POSTGRES_DB, POSTGRES_HOST, POSTGRES_PASSWORD, P
                      SMTP_HOST, SMTP_PORT,
                      REDIS_LOCATION_URL, DATABASE_LOCAL, DATABASE_ENGINE_LOCAL,
                      DATABASE_ENGINE_REMOTE, APP_TIME_ZONE, JWT_ACCESS_TOKEN_LIFETIME_MINUTES, JWT_REFRESH_TOKEN_LIFETIME_DAYS, DB_TO_RADIS_HOST, DB_TO_RADIS_PORT)
+# from project.asgi import application
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+os.environ.setdefault("PYTHONPATH", f"{BASE_DIR}")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -109,6 +111,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 ASGI_APPLICATION = "project.asgi.application"
 

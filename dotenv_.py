@@ -4,6 +4,7 @@ import dotenv
 
 dotenv.load_dotenv()
 
+PYTHONPATH = os.getenv("PYTHONPATH", "")
 SECRET_KEY_DJ = os.getenv("SECRET_KEY_DJ", "")
 POSTGRES_DB = os.getenv("POSTGRES_DB", "")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "")
