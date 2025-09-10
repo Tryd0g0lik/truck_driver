@@ -1,21 +1,20 @@
+"""
+person/tasks/task_user_is_authenticate.py
+"""
+
 import asyncio
-import json
 import logging
 from datetime import datetime
 from json import JSONDecodeError
 
 from redis.asyncio.client import Redis
-from redis.exceptions import ConnectionError, BusyLoadingError
-from redis.backoff import ExponentialBackoff
-from redis.retry import Retry
+from redis.exceptions import ConnectionError
 from celery import shared_task
 
 from logs import configure_logging
 from person.interfaces import TypeUser
 from person.views_api.redis_person import RedisOfPerson
 
-
-from dotenv_ import DB_TO_RADIS_CACHE_USERS, DB_TO_RADIS_PORT, DB_TO_RADIS_HOST
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)

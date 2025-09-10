@@ -272,6 +272,7 @@ Now, email's message we can see only inside of console or truck_driver doker's l
 ![docker_logs_truck_driver](./img/docker_logs_truck_driver.png)
 
 
+
 ----
 ## OpenAPI
 - '`GET`' "`{{url_basis}}/api/auth/person/`" - Get the list of records from the person db and for user admin 
@@ -285,6 +286,9 @@ But, we have and [Fron path](https://github.com/Tryd0g0lik/truck_driver_front).
 - '`GET`' "`{{url_basis}}/api/auth/csrftoken/`" - Get csrf-token into the cookie
 - '`PUT`' "`{{url_basis}}/api/auth/person/<str:pk>/`" Change data in redis. 'pk' is user's index.
 - '`DELETE`' "`{{url_basis}}/api/auth/person/<str:pk>/`" Removing the user's data from everyone db. 
+**BINARY**
+- '`POST`' "`{{url_basis}}/api/auth/binary/binary_to_object/`" Receive object from the binary data   
+- '`POST`' "`{{url_basis}}/api/auth/binary/str_to_binary/`" Receive binary data from the string   
 ### Swagger
 **Example of redoc**\
 ![redoc](./img/redoc.png)
@@ -298,6 +302,7 @@ The root of project contain the 'swagger' file.
 ----
 
 ## Local URL
+* "`admin/`"
 * "`register/`" page for registration;
 * "`login/`" page for authorisation;
 * "`raport/`" page contain the map and form for report.
@@ -338,8 +343,30 @@ User uses roles which is presente - above in title, can bring  the changes to th
 - "`id`", "`username`", "`is_staff`", "`is_superuser`", "`is_verified`", "`created_at`";
 - "`is_active`", "`date_joined`", "`balance`", "`category`", "`verification_code`", "`is_sent`",
 
-His can chang the:
- - "`first_name`", "`last_name`", "`email`", "`password`"
+
+<details close>
+<summary>**Roles & permissions**</summary>
+
+### DELETE the account
+#### ADMIN
+ - DELETE - Admin can delete anyone from the account;
+ - GET of user List - Only admin can get all the user's list. In now time, only from relational db. But, don't get from the redis's cache. Simple, \
+relational db is to update only in time: 01:00 AM (every day).
+ - GET of one user - Admin can get data for single of anyone of users. 
+ - PUT for contribute of changes - Admin can change everything what he wants
+
+#### BASE DRIVER, MANAGER, CLIENT
+- Everyone from user can remove an own account and nothing more.
+- GET of one user - User can get data only for own account.
+- PUT for contribute of changes only to the "`first_name`", "`last_name`", "`email`", "`password`"
+
+#### Note
+When user pushing on delete, his removing from the relational db and with number redis 1 (and 0).
+
+
+
+
+</details>
 
 
 ## And More
@@ -351,17 +378,10 @@ Now, you can  create a new user, only and his will be record to the cache, auto.
 
 If what, i'm reade to continue working. Thanks.  
 
-[//]: # (## Middleware)
-
-[//]: # (Промежуточная функция.\)
-
-[//]: # (Запрос из клиента нам даёт "`access_token`" или "`reffresh_token`".\)
-[//]: # (Из токена мы получаем путь к пользователю, который сделал запрос на сервер.)
-
 
 ## Permission
 <details close>
-<summary>Permissions for 'person'</summary>
+<summary>**Permissions for 'person'**</summary>
 
 Creating the groups of  permissions bit path "'person/apps.py'" and classes "`person/permissions.py`" for distribution of rights
 ```python

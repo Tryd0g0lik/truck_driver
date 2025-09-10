@@ -622,6 +622,89 @@
 				}
 			},
 			"response": []
+<<<<<<< HEAD
+=======
+		},
+		{
+			"name": "user_delete",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// try {\r",
+							"//     const response = await pm.sendRequest({\r",
+							"//         url: `http://127.0.0.1:8000/api/auth/csrftoken/`,\r",
+							"//         method: \"GET\"\r",
+							"//     });\r",
+							"\r",
+							"//     // console.log(response.json());\r",
+							"//     pm.sendRequest(response, (err, response) => {\r",
+							"//             if (err){\r",
+							"//                 console.log(\"Ошибка при получении токена:\", err)\r",
+							"//             }\r",
+							"//             // const result = response.json()\r",
+							"//             console.log(\"Получили токен\")\r",
+							"//             console.log(response)\r",
+							"//         pm.collectionVariables.set(\"csrfToken\", response.json().csrfToken);\r",
+							"//         }\r",
+							"//     );\r",
+							"\r",
+							"// } catch (err) {\r",
+							"//     console.error(err);\r",
+							"// }\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful DELETE request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 202, 204]);",
+							"});",
+							"",
+							"pm.test(\"Content-Type is present\", function () {",
+							"    pm.response.to.have.header(\"Content-Type\");",
+							"});",
+							"",
+							"pm.test(\"Response time is less than 1 second\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "X-CSRFToken",
+						"value": "{{CSRFToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{url_basis}}/api/auth/person/89/",
+					"host": [
+						"{{url_basis}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"person",
+						"89",
+						""
+					]
+				}
+			},
+			"response": []
+>>>>>>> cicd
 		}
 	]
 }

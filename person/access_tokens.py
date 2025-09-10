@@ -1,6 +1,10 @@
+"""
+person/access_tokens.py
+"""
+
 import base64
 import pickle
-from typing import Generic, List
+from typing import List
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
