@@ -22,7 +22,7 @@ from dotenv_ import (DB_ENGINE, POSTGRES_DB, POSTGRES_HOST, POSTGRES_PASSWORD, P
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-os.environ.setdefault("PYTHONPATH", f"{BASE_DIR}")
+# os.environ.setdefault("PYTHONPATH", f"{BASE_DIR}")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -127,7 +127,7 @@ DATABASES = {
         'ENGINE': f'{DB_ENGINE}',
         'NAME': f'{POSTGRES_DB}',
         'USER': f'{POSTGRES_USER}',
-        'PASSWORD': POSTGRES_PASSWORD,
+        'PASSWORD': f"{POSTGRES_PASSWORD}",
         'HOST': f'{POSTGRES_HOST}',
         'PORT': f'{POSTGRES_PORT}',
         "KEY_PREFIX": "drive_", # it's my prefix for the keys
