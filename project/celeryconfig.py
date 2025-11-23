@@ -1,5 +1,9 @@
-broker_url = "redis://83.166.245.209:6380/0"
-result_backend = "redis://83.166.245.209:6380/0"
+# broker_url = "redis://83.166.245.209:6380/0"
+# result_backend = "redis://83.166.245.209:6380/0"
+import os
+
+broker_url = f"redis://{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', '6379')}/0"
+result_backend = f"redis://{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', '6379')}/0"
 
 task_serializer = "json"
 result_serializer = "json"
