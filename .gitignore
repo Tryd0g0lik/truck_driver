@@ -292,3 +292,4 @@ core
 !./.pre-commit-config.yaml
 !./.pylintrc
 !./.logs.py
+*.sqlite3
