@@ -836,6 +836,8 @@ class UserViews(ViewSet):
                         user_list.append(caches_user)
                         break
                 await client.aclose()
+
+                #  Проверить при авторизации !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if len(user_list) == 0:
                     # Redis, didn't give for us anything, and we go to the relational db.
                     user_list: List[U] = [
@@ -853,12 +855,12 @@ class UserViews(ViewSet):
                     response.data = {"data": "User was not found."}
                     response.status_code = status.HTTP_404_NOT_FOUND
                     return response
-            except Exception as error:
+            except Exception as e:
                 log.error(
                     "%s: ERROR => %s"
                     % (
                         UserViews.__class__.__name__ + "." + self.active.__name__,
-                        error.args[0],
+                        e.args[0],
                     )
                 )
                 # SERVER HAS ERROR
@@ -886,7 +888,7 @@ class UserViews(ViewSet):
             kwargs = {"user": user_dict, "db": 1}
             # TASK 1
             task1 = asyncio.create_task(
-                self._async_caching(
+                self._async_cashing(
                     f"user:{user.__getattribute__("id")}:person", **kwargs
                 )
             )
@@ -902,7 +904,7 @@ class UserViews(ViewSet):
             )
             kwargs.__setitem__("user", user)
             task2 = asyncio.create_task(
-                self._async_caching(
+                self._async_cashing(
                     f"user:{user.__getattribute__('id')}:session", **kwargs
                 )
             )
@@ -929,6 +931,7 @@ class UserViews(ViewSet):
                     "%s: CACHE OF USER is invalid. ERROR => %s"
                     % (UserViews.__class__.__name__ + self.login.__name__, error)
                 )
+                #   Вынести в декоратор !!!!!!!!!!!!!!!!!!!!!!!!!!!!
             try:
                 # GET ACCESS TOKENS
                 accesstoken = AccessToken(user)
@@ -1595,7 +1598,7 @@ class UserViews(ViewSet):
         return _regex.match(value)
 
     @staticmethod
-    async def _async_caching(key: str, **kwargs) -> bool:
+    async def _async_cashing(key: str, **kwargs) -> bool:
         """
         by default:
         - host: str = f"{DB_TO_RADIS_HOST}",
