@@ -4,6 +4,7 @@ import dotenv
 
 dotenv.load_dotenv()
 
+IS_DEBUG = os.getenv("IS_DEBUG", "")
 PYTHONPATH = os.getenv("PYTHONPATH", "")
 SECRET_KEY_DJ = os.getenv("SECRET_KEY_DJ", "")
 POSTGRES_DB = os.getenv("POSTGRES_DB", "")
