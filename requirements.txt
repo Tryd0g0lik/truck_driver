@@ -24,3 +24,4 @@ drf-yasg==1.21.10
 daphne>=4.0.0
 keyring>=24.0.0
 pontos>=24.0.0
+whitenoise>=6.10.0

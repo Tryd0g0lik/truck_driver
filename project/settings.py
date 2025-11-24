@@ -14,15 +14,14 @@ from pathlib import Path
 from datetime import timedelta, datetime
 from dotenv_ import (DB_ENGINE, POSTGRES_DB, POSTGRES_HOST, POSTGRES_PASSWORD, POSTGRES_PORT, POSTGRES_USER,
                      SECRET_KEY_DJ, SMTP_USER, SMTP_PASS,
-                     SMTP_HOST, SMTP_PORT,
-                     REDIS_LOCATION_URL, DATABASE_LOCAL, DATABASE_ENGINE_LOCAL,
+                     SMTP_HOST, SMTP_PORT,IS_DEBUG,
+                     APP_PORT, DATABASE_LOCAL, DATABASE_ENGINE_LOCAL,
                      DATABASE_ENGINE_REMOTE, APP_TIME_ZONE, JWT_ACCESS_TOKEN_LIFETIME_MINUTES, JWT_REFRESH_TOKEN_LIFETIME_DAYS, DB_TO_RADIS_HOST, DB_TO_RADIS_PORT)
-# from project.asgi import application
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-os.environ.setdefault("PYTHONPATH", f"{BASE_DIR}")
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -32,9 +31,30 @@ SECRET_KEY = f'{SECRET_KEY_DJ}'
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY must be set in environment variables")
 # SECURITY WARNING: don't run with debug turned on in production!
-# """"DEBUG""""
-DEBUG = True
 
+# """" HOST """"
+ALLOWED_HOSTS = [
+    f"{DB_TO_RADIS_HOST}",
+    '127.0.0.1',
+    '0.0.0.0',
+]
+# """" DATABASE """"
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+DATABASES = {
+    "default": {
+        'ENGINE': f'{DB_ENGINE}',
+        'NAME': f'{POSTGRES_DB}',
+        'USER': f'{POSTGRES_USER}',
+        'PASSWORD': f"{POSTGRES_PASSWORD}",
+        'HOST': f'{POSTGRES_HOST}',
+        'PORT': f'{POSTGRES_PORT}',
+        "KEY_PREFIX": "drive_", # it's my prefix for the keys
+    }
+}
+
+# """" DEBUG """"
+DEBUG = True if int(IS_DEBUG) == 1 else False
 SECURE_SSL_REDIRECT = False # т.к. запуск на http:
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'http')
 if DEBUG:
@@ -47,15 +67,14 @@ if DEBUG:
     WHITENOISE_MAX_AGE = 0
     WHITENOISE_USE_FINDERS = False
 
-ALLOWED_HOSTS = [
-    f"{DB_TO_RADIS_HOST}",
-    '127.0.0.1',
-    '0.0.0.0',
-]
+    ALLOWED_HOSTS.pop(0)
 
+    DATABASES["default"] = {
+        'ENGINE': f'{DATABASE_ENGINE_LOCAL}',
+        'NAME': BASE_DIR / f'{DATABASE_LOCAL}',
+    }
 
 # Application definition
-
 INSTALLED_APPS = [
     "daphne",
     'rest_framework',
@@ -86,7 +105,7 @@ MIDDLEWARE = [
     'project.middleware.RedisAuthMiddleware',
 ]
 
-# '''WHITEnOISE'''
+# ''' WHITEnOISE '''
 # for a static files in production
 # https://whitenoise.readthedocs.io/en/stable/django.html
 WHITENOISE_MAX_AGE = 31536000  # static cache by 1 year
@@ -115,24 +134,7 @@ TEMPLATES = [
 
 ASGI_APPLICATION = "project.asgi.application"
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    # "default": {
-    #     'ENGINE': f'{DATABASE_ENGINE_LOCAL}',
-    #     'NAME': BASE_DIR / f'{DATABASE_LOCAL}',
-    # },
-    "default": {
-        'ENGINE': f'{DB_ENGINE}',
-        'NAME': f'{POSTGRES_DB}',
-        'USER': f'{POSTGRES_USER}',
-        'PASSWORD': POSTGRES_PASSWORD,
-        'HOST': f'{POSTGRES_HOST}',
-        'PORT': f'{POSTGRES_PORT}',
-        "KEY_PREFIX": "drive_", # it's my prefix for the keys
-    }
-}
 # '''CELERY"""
 # 'celeryconfig.py' contains more information,
 CELERY_TASK_TRACK_STARTED = True
@@ -207,21 +209,16 @@ SESSION_COOKIE_AGE = 86400
 CORS_ORIGIN_ALLOW_ALL = True
 # Here, we allow the URL list for publicated
 CORS_ALLOWED_ORIGINS = [
-    f"http://{DB_TO_RADIS_HOST}",
-    "http://127.0.0.1:8000",
+    f"http://{DB_TO_RADIS_HOST}:{APP_PORT}",
     f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
+    "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
 ]
 
 # https://github.com/adamchainz/django-cors-headers?tab=readme-ov-file#csrf-integration
 # https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-CSRF_TRUSTED_ORIGINS
 # This is list from private of URL
-CSRF_TRUSTED_ORIGINS = [
-    f"http://{DB_TO_RADIS_HOST}",
-    "http://127.0.0.1:8000",
-    f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
-    "http://0.0.0.0:8000",
-    ]
+CSRF_TRUSTED_ORIGINS = [ *CORS_ALLOWED_ORIGINS]
 # Allow the cookie in HTTP request.
 CORS_ALLOW_CREDENTIALS = True
 # Allow the methods to the methods in HTTP

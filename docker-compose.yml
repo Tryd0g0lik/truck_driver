@@ -73,7 +73,21 @@ services:
             - db
             - redis
         restart: unless-stopped
-
+    celery_beat:
+        container_name: celery_beat_truckdriver
+        build:
+            context: .
+            dockerfile: ./Dockerfile
+        env_file: ./.env
+        command:
+            - sh
+            - -c
+            - "celery -A project.celery beat --loglevel=info"
+        volumes:
+            - .:/www/src
+        depends_on:
+            - celery
+        restart: unless-stopped
     nginx:
         container_name: nginx
         build:

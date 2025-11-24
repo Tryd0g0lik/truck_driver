@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 
 
+=======
+Log: Serge\
+Pass: gKU12pgP5hB%Yhr   /  gKU-pgP-5hB-Yhr
+>>>>>>> cicd
 - [Front](https://github.com/Tryd0g0lik/truck_driver_front)
 - [FastAPI Backend Map](https://github.com/Tryd0g0lik/truck_driver_app_microservice)
 
