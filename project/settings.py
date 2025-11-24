@@ -15,14 +15,13 @@ from datetime import timedelta, datetime
 from dotenv_ import (DB_ENGINE, POSTGRES_DB, POSTGRES_HOST, POSTGRES_PASSWORD, POSTGRES_PORT, POSTGRES_USER,
                      SECRET_KEY_DJ, SMTP_USER, SMTP_PASS,
                      SMTP_HOST, SMTP_PORT,IS_DEBUG,
-                     REDIS_LOCATION_URL, DATABASE_LOCAL, DATABASE_ENGINE_LOCAL,
+                     APP_PORT, DATABASE_LOCAL, DATABASE_ENGINE_LOCAL,
                      DATABASE_ENGINE_REMOTE, APP_TIME_ZONE, JWT_ACCESS_TOKEN_LIFETIME_MINUTES, JWT_REFRESH_TOKEN_LIFETIME_DAYS, DB_TO_RADIS_HOST, DB_TO_RADIS_PORT)
-# from project.asgi import application
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# os.environ.setdefault("PYTHONPATH", f"{BASE_DIR}")
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -75,11 +74,7 @@ if DEBUG:
         'NAME': BASE_DIR / f'{DATABASE_LOCAL}',
     }
 
-
-
-
 # Application definition
-
 INSTALLED_APPS = [
     "daphne",
     'rest_framework',
@@ -214,6 +209,7 @@ SESSION_COOKIE_AGE = 86400
 CORS_ORIGIN_ALLOW_ALL = True
 # Here, we allow the URL list for publicated
 CORS_ALLOWED_ORIGINS = [
+    f"http://{DB_TO_RADIS_HOST}:{APP_PORT}",
     f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
     "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
@@ -222,11 +218,7 @@ CORS_ALLOWED_ORIGINS = [
 # https://github.com/adamchainz/django-cors-headers?tab=readme-ov-file#csrf-integration
 # https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-CSRF_TRUSTED_ORIGINS
 # This is list from private of URL
-CSRF_TRUSTED_ORIGINS = [
-    f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
-    "http://127.0.0.1:8000",
-    "http://0.0.0.0:8000",
-    ]
+CSRF_TRUSTED_ORIGINS = [ *CORS_ALLOWED_ORIGINS]
 # Allow the cookie in HTTP request.
 CORS_ALLOW_CREDENTIALS = True
 # Allow the methods to the methods in HTTP
