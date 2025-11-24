@@ -789,6 +789,13 @@ class UserViews(ViewSet):
     async def active(
         self, request: HttpRequest, pk: str = "0", **kwargs
     ) -> HttpResponse:
+        """
+        First the user's authorisation retur a user id invalid.
+        :param request:
+        :param pk:
+        :param kwargs:
+        :return:
+        """
         from person.tasks.task_user_is_login import task_user_login
 
         user = request.user if request.user else AnonymousUser()
