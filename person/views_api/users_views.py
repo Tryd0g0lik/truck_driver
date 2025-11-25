@@ -871,7 +871,7 @@ class UserViews(ViewSet):
                     )
                 )
                 # SERVER HAS ERROR
-                response.data = {"data": error.args[0]}
+                response.data = {"data": e.args[0]}
                 response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                 return response
             user_one = user_list.__getitem__(0)
