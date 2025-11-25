@@ -73,20 +73,32 @@ jobs:
 #                    python manage.py collectstatic --noinput --clear
 
             -   name: Run makemigrations
+                env:
+                    SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
+                    SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
                 run: |
                     python ./manage.py makemigrations
 
             -   name: Run migrate
+                env:
+                    SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
+                    SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
                 run: |
                     python manage.py migrate
 
             -   name: Run pre-commit hooks
+                env:
+                    SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
+                    SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
                 working-directory: .
                 run: |
                     pip install pre-commit
                     pre-commit run --all-files
 
             -   name: Run tests
+                env:
+                    SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
+                    SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
                 working-directory: .
                 run: |
                     python manage.py test __tsts__/tests_person/
@@ -100,6 +112,9 @@ jobs:
                         --cov-report=xml
 
             -   name: Upload coverage to Codecov
+                env:
+                    SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
+                    SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
                 uses: codecov/codecov-action@v5.5.1
                 with:
                     file: ./coverage.xml
@@ -124,11 +139,12 @@ jobs:
             matrix:
                 python-version: [ '3.12' ]
         env:
+            SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
+            SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
             DEPLOY_HOST: ${{  secrets.SSH_HOST  }}
             DEPLOY_USER: ${{  secrets.SSH_USER  }}
             DEPLOY_KEY: ${{  secrets.SSH_KEY  }}
             DEPLOY_PASSWORD: ${{  secrets.SSH_PASSWORD  }}
-            SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
         needs: test_backend
         steps:
             -   name: Deploy to GitHub Pages
