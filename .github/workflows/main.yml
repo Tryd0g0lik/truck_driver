@@ -87,16 +87,12 @@ jobs:
                     SMTP_PORT: 465
                     SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
                     SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
+                    DB_ENGINE: django.db.backends.postgresql
                     IS_DEBUG: 0
                 run: |
                     python manage.py migrate
 
             -   name: Run pre-commit hooks
-                env:
-                    SMTP_PORT: 465
-                    SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
-                    SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
-                    IS_DEBUG: 0
                 working-directory: .
                 run: |
                     pip install pre-commit
@@ -108,6 +104,7 @@ jobs:
                     SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
                     SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
                     IS_DEBUG: 0
+                    DB_ENGINE: django.db.backends.postgresql
                 working-directory: .
                 run: |
                     python manage.py test __tsts__/tests_person/
