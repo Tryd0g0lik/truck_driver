@@ -65,12 +65,12 @@ jobs:
                     pip install -r requirements.txt
                     pip install pytest pytest-asyncio pytest-django pytest-cov
 
-            -   name: Collect static files (if needed)
-                env:
-                    SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
-                    SECRET_KEY_DJ: ${{ secrets.DJANGO_SECRET_KEY }}
-                run: |
-                    python manage.py collectstatic --noinput --clear
+#            -   name: Collect static files (if needed)
+#                env:
+#                    SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+#                    SECRET_KEY_DJ: ${{ secrets.DJANGO_SECRET_KEY }}
+#                run: |
+#                    python manage.py collectstatic --noinput --clear
 
             -   name: Run makemigrations
                 run: |
@@ -135,6 +135,6 @@ jobs:
                 with:
                     host: ${{  env.DEPLOY_HOST  }}
                     username: ${{  env.DEPLOY_USER  }}
-                    password: ${{  env.DEPLOY_KEY  }}
+                    password: ${{  env.DEPLOY_PASSWORD  }}
                     script: |
                         expect /home/denis/redis/pull.exp
