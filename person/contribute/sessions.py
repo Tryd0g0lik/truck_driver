@@ -2,7 +2,7 @@
 person/contribute/sessions.py
     HASH for work with the cacher (from session) table of db.
     Look to the settings.py::CACHES
- """
+"""
 
 import bcrypt
 from django.core.cache import cache
