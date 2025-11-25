@@ -66,10 +66,10 @@ async def test_persone_active_valid(
     request.__setattr__(
         "data",
         {
-            "username": username,
-            "email": email,
-            "password": password,
-            "category": category,
+            "username": username.strip(),
+            "email": email.strip(),
+            "password": password.strip(),
+            "category": category.strip(),
         },
     )
     await UserViews().create(request)

@@ -47,8 +47,7 @@ services:
             timeout: 10s
             retries: 3
 
-        #command:
-         #   - --bind 0.0.0.0
+        command: redis-server --bind 0.0.0.0
         volumes:
             - redis_data:/data
         depends_on:

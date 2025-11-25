@@ -14,8 +14,8 @@ POSTGRES_HOST = os.getenv("POSTGRES_HOST", "")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "")
 DB_ENGINE = os.getenv("DB_ENGINE", "")
 
-APP_PROTOCOL = os.getenv("APP_PROTOCOL", "")
-APP_HOST = os.getenv("APP_HOST", "")
+APP_PROTOCOL: str = os.getenv("APP_PROTOCOL", "")
+APP_HOST: str = os.getenv("APP_HOST", "")
 APP_PORT = os.getenv("APP_PORT", "")
 APP_TIME_ZONE = os.getenv("APP_TIME_ZONE", "")
 
@@ -30,6 +30,7 @@ REDIS_LOCATION_URL = os.getenv("REDIS_LOCATION_URL", "")
 DB_TO_RADIS_CACHE_USERS = os.getenv("DB_TO_RADIS_CACHE_USERS", "")
 DB_TO_RADIS_PORT = os.getenv("DB_TO_RADIS_PORT", "")
 DB_TO_RADIS_HOST = os.getenv("DB_TO_RADIS_HOST", "")
+REDIS_HOST = os.getenv("REDIS_HOST", "")
 # CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "")
 
 # Email сервис (опционально)

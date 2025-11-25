@@ -22,7 +22,7 @@ def send_activation_notificcation(user) -> bool:
     """
 
     url = f"{APP_PROTOCOL}://{APP_HOST}"
-    _resp_bool = False
+
     try:
         if APP_PORT:
             APP_PROTOCOL, APP_HOST,
@@ -51,9 +51,7 @@ def send_activation_notificcation(user) -> bool:
         user_db.is_active = False
         user.verification_code = (str(verification_code).split("_null_"))[1]
         user_db.save()
-        _resp_bool = True
+        return True
     except Exception as err:
         print(err)
-        _resp_bool = False
-    finally:
-        return _resp_bool
+        return False

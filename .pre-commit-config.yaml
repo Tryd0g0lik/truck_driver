@@ -1,3 +1,4 @@
+exclude: ^(venv|__init__.py|__pycache__py|manage.py|project|__tests__)$
 repos:
   # https://pre-commit.com/#config-exclude
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -8,7 +9,7 @@ repos:
         ignore: project
       - id: end-of-file-fixer
         files: \.py$
-        ignore: project, __tests__
+        ignore: ^(project/|__tests__/)
 
 
   - repo: https://github.com/PyCQA/flake8
@@ -16,7 +17,7 @@ repos:
     rev: 7.1.1
     hooks:
       - id: flake8
-        exclude: project
+        exclude: ^(project/|__tests__/)
 
   - repo: https://github.com/psf/black
     # https://black.readthedocs.io/en/stable/
@@ -25,7 +26,7 @@ repos:
       - id: black
         files: \.py$
         language_version: "3.12"
-        exclude: ^(venv/|__init__.py|__pycache__py|manage.py|project/settings.py|__tests__/)$
+
     repos:
       # https://bandit.readthedocs.io/en/latest/config.html
       # https://pypi.org/project/bandit/

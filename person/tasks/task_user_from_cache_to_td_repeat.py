@@ -61,7 +61,13 @@ def person_upgrade_data_of_user(client: type(Redis.client)) -> bool:
             "%s: Redis connection failed" % person_upgrade_data_of_user.__name__
         )
     log.info("CLient is ping")
-    keys_list = [item.decode() for item in client.keys("user:*")]
+    keys_list = [item.decode() for item in list(client.keys("user:*"))]
+    if len(keys_list) == 0:
+        log.error(
+            "%s: ERROR => %s"
+            % (person_upgrade_data_of_user.__name__, '"keys_list" is empty')
+        )
+        return False
     try:
         # Upgrade basis db.
         for k_name in keys_list:

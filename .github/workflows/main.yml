@@ -5,33 +5,157 @@ on:
     branches: ['cicd']
 
 jobs:
-  deploy_truckdriver:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [ '3.12' ]
-    steps:
-      # cache remove
-      - name: Clear GitHub Actions cache
-        run: rm -rf $HOME/.cache/actions
+    test_backend:
+        name: Test Backend
+        runs-on: ubuntu-latest
+        env:
+            POSTGRES_USER: ${{ secrets.POSTGRES_DB_USER }}
+            POSTGRES_PASSWORD: ${{ secrets.POSTGRES_DB_PASSWORD }}
+            POSTGRES_DB_PORT: ${{ secrets.POSTGRES_DB_PORT }}
+            POSTGRES_DB_HOST: ${{ secrets.POSTGRES_DB_HOST }}
+            DJANGO_SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
+            IS_DEBUG: 0
+            DATABASE_URL: "postgresql://${{  secrets.POSTGRES_DB_USER }}:${{ secrets.POSTGRES_DB_PASSWORD }}@${{ secrets.POSTGRES_DB_HOST }}:${{ secrets.POSTGRES_DB_PORT }}/${{ secrets.POSTGRES_DB  }}"
+            SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+            DEBUG: "True"
+        services:
+            postgres:
+                image: postgres:14
+                env:
+                    POSTGRES_USER: ${{  secrets.POSTGRES_DB_USER  }}
+                    POSTGRES_PASSWORD: ${{  secrets.POSTGRES_DB_PASSWORD  }}
+                    POSTGRES_DB: test_d
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+                ports:
+                    - 5432:5432
 
-  cicd_deploy:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [ '3.12' ]
-    env:
-      DEPLOY_HOST: ${{ secrets.SSH_HOST }}
-      DEPLOY_USER: ${{ secrets.SSH_USER }}
-      DEPLOY_KEY: ${{ secrets.SSH_KEY }}
-      DEPLOY_PASSWORD: ${{ secrets.SSH_PASSWORD }}
-    needs: deploy_truckdriver
-    steps:
-      - name: Deploy to GitHub Pages
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          script: |
-            expect /home/denis/redis/pull.exp
+        strategy:
+            matrix:
+                python-version: [ 3.12 ]
+                django-version: [ 4.2 ]
+        steps:
+            -   name: Checkout code
+                uses: actions/checkout@v6.0.0
+
+            -   name: Set up Python ${{  matrix.python-version  }}
+                uses: actions/setup-python@v6.1.0
+                with:
+                    python-version: ${{  matrix.python-version  }}
+
+            -   name: Install system dependencies
+                run: |
+                    sudo apt-get update
+                    sudo apt-get install -y postgresql-client
+
+            -   name: Cache pip packages
+                uses: actions/cache@v4.3.0
+                with:
+                    path: ~/.cache/pip
+                    key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt')  }}
+                    restore-keys: |
+                        ${{  runner.os  }}-pip-
+
+            -   name: Install backend dependencies
+                working-directory: .
+                run: |
+                    python -m pip install --upgrade pip
+                    pip install -r requirements.txt
+                    pip install pytest pytest-asyncio pytest-django pytest-cov
+
+            -   name: Run makemigrations
+                env:
+                    SMTP_PORT: 465
+                    SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
+                    SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
+                    IS_DEBUG: 0
+                run: |
+                    python ./manage.py makemigrations
+
+            -   name: Run migrate
+                env:
+                    SMTP_PORT: 465
+                    SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
+                    SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
+                    DB_ENGINE: django.db.backends.postgresql
+                    IS_DEBUG: 0
+                    POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+                    POSTGRES_USER:  ${{ secrets.POSTGRES_DB_USER }}
+                    POSTGRES_PASSWORD:  ${{ secrets.POSTGRES_DB_PASSWORD }}
+                    POSTGRES_PORT: ${{ secrets.POSTGRES_DB_PORT }}
+                    POSTGRES_HOST: ${{ secrets.POSTGRES_DB_HOST }}
+                run: |
+                    python manage.py migrate
+
+            -   name: Run pre-commit hooks
+                working-directory: .
+                run: |
+                    pip install pre-commit
+                    pre-commit  run --all-files --show-diff
+
+#            -   name: Run tests
+#                env:
+#                    SMTP_PORT: 465
+#                    SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
+#                    SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
+#                    IS_DEBUG: 0
+#                    DB_ENGINE: django.db.backends.postgresql
+#                working-directory: .
+#                run: |
+#                    python manage.py test __tsts__/tests_person/
+#                    pytest __tsts__/tests_person/test_user_registrition_invalid.py -v
+#                    pytest --cov=person --cov-report=xml
+#                    # или
+#                    python -m pytest __tests__/tests_person/test_user_registrition_invalid.py \
+#                        -v \
+#                        --tb=short \
+#                        --cov=person \
+#                        --cov-report=xml
+#
+#            -   name: Upload coverage to Codecov
+#                env:
+#                    SMTP_PORT: 465
+#                    SECRET_KEY_DJ: ${{ secrets.SECRET_KEY_DJ }}
+#                    SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
+#                    IS_DEBUG: 0
+#                uses: codecov/codecov-action@v5.5.1
+#                with:
+#                    file: ./coverage.xml
+#                    flags: django,unittests,api
+#                    name: codecov-umbrella
+#                    fail_ci_if_error: false
+        needs: deploy_truckdriver
+
+    deploy_truckdriver:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: [ '3.12' ]
+        steps:
+            # cache remove
+            -   name: Clear GitHub Actions cache
+                run: rm -rf $HOME/.cache/actions
+
+    cicd_deploy:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: [ '3.12' ]
+        env:
+            DEPLOY_HOST: ${{  secrets.SSH_HOST  }}
+            DEPLOY_USER: ${{  secrets.SSH_USER  }}
+            DEPLOY_KEY: ${{  secrets.SSH_KEY  }}
+            DEPLOY_PASSWORD: ${{  secrets.SSH_PASSWORD  }}
+        needs: test_backend
+        steps:
+            -   name: Deploy to GitHub Pages
+                uses: appleboy/ssh-action@master
+                with:
+                    host: ${{  env.DEPLOY_HOST  }}
+                    username: ${{  env.DEPLOY_USER  }}
+                    password: ${{  env.DEPLOY_PASSWORD  }}
+                    script: |
+                        expect /home/denis/redis/pull.exp

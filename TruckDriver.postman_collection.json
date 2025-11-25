@@ -622,8 +622,7 @@
 				}
 			},
 			"response": []
-<<<<<<< HEAD
-=======
+
 		},
 		{
 			"name": "user_delete",
