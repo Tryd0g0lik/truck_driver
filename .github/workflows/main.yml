@@ -129,7 +129,7 @@ jobs:
                 uses: appleboy/ssh-action@master
                 with:
                     host: ${{ env.DEPLOY_HOST }}
-                    username: ${{ user.DEPLOY_USER }}
+                    username: ${{ env.DEPLOY_USER }}
                     password: ${{ env.DEPLOY_KEY }}
                     script: |
                         expect /home/denis/redis/pull.exp
