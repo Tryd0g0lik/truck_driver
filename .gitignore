@@ -293,3 +293,6 @@ core
 !./.pylintrc
 !./.logs.py
 *.sqlite3
+*.bak
+*.dat
+*.dir

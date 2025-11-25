@@ -1,5 +1,3 @@
-Log: Serge\
-Pass: gKU12pgP5hB%Yhr   /  gKU-pgP-5hB-Yhr
 - [Front](https://github.com/Tryd0g0lik/truck_driver_front)
 - [FastAPI Backend Map](https://github.com/Tryd0g0lik/truck_driver_app_microservice)
 
@@ -92,6 +90,12 @@ Receiving data passes by rule: Front doesn't know about the server; Server doesn
 SECRET_KEY_DJ=<django_secret_key>
 DJANGO_SETTINGS_MODULE=project.settings
 POSTGRES_DB=<db_name>
+IS_DEBUG=1 # One it is the True (DEBUG mode) or zero  
+
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+
 # person
 POSTGRES_USER=postgres
 POSTGRES_HOST=127.0.0.1
