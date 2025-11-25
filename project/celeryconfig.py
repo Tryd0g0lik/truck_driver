@@ -2,13 +2,13 @@
 # result_backend = "redis://83.166.245.209:6380/0"
 import os
 
-broker_url = (
-    f"redis://{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', '6379')}/0"
-)
-result_backend = (
-    f"redis://{os.getenv('REDIS_HOST', 'redis')}:{os.getenv('REDIS_PORT', '6379')}/0"
-)
+from dotenv_ import IS_DEBUG, DB_TO_RADIS_HOST, DB_TO_RADIS_PORT, REDIS_HOST
 
+broker_url = f"redis://{REDIS_HOST}:{DB_TO_RADIS_PORT}/0"
+result_backend = f"redis://{REDIS_HOST}:{DB_TO_RADIS_PORT}/0"
+if int(IS_DEBUG) == 1:
+    broker_url = f"redis://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}/0"
+    result_backend = f"redis://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}/0"
 task_serializer = "json"
 result_serializer = "json"
 accept_content = ["json"]

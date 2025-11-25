@@ -409,3 +409,5 @@ groups_permissions = {
 
 ## Tests
 Testing through the 'pytest' "`__tests__/*`"
+
+![total pytest](img/total_test.png)
