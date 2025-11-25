@@ -66,6 +66,8 @@ jobs:
                     pip install pytest pytest-asyncio pytest-django pytest-cov
 
             -   name: Collect static files (if needed)
+                env:
+                    SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
                 run: |
                     python manage.py collectstatic --noinput --clear
 
