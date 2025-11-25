@@ -15,7 +15,7 @@ jobs:
             POSTGRES_DB_HOST: ${{secrets.POSTGRES_DB_HOST}}
             DJANGO_SECRET_KEY: ${{secrets.SECRET_KEY_DJ}}
             POSTGRES_DB: test_db
-            DATABASE_URL: "postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD}}@${{env.POSTGRES_DB_HOST}}:${{env.POSTGRES_DB_PORT}}/${{ env.POSTGRES_DB }}"
+            DATABASE_URL: "postgresql://${{ secrets.POSTGRES_DB_USER}}:${{secrets.POSTGRES_DB_PASSWORD}}@${{secrets.POSTGRES_DB_HOST}}:${{secrets.POSTGRES_DB_PORT}}/${{secrets.POSTGRES_DB }}"
             SECRET_KEY: ${{secrets.DJANGO_SECRET_KEY}}
             DEBUG: "True"
         services:
