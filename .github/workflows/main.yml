@@ -89,6 +89,11 @@ jobs:
                     SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
                     DB_ENGINE: django.db.backends.postgresql
                     IS_DEBUG: 0
+                    POSTGRES_DB: test_db
+                    POSTGRES_USER:  ${{ secrets.POSTGRES_DB_USER }}
+                    POSTGRES_PASSWORD:  ${{ secrets.POSTGRES_DB_PASSWORD }}
+                    POSTGRES_PORT: ${{ secrets.POSTGRES_DB_PORT }}
+                    POSTGRES_HOST: ${{ secrets.POSTGRES_DB_HOST }}
                 run: |
                     python manage.py migrate
 
