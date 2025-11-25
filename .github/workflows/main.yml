@@ -94,7 +94,7 @@ jobs:
                 working-directory: .
                 run: |
                     pip install pre-commit
-                    pre-commit run --all-files
+                    pre-commit  run --all-files --show-diff
 
 #            -   name: Run tests
 #                env:
