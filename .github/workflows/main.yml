@@ -52,7 +52,7 @@ jobs:
                 uses: actions/cache@v4.3.0
                 with:
                     path: ~/.cache/pip
-                    key: ${{runner.os}}-pip-${{hashFiles('backend/requirements.txt') }}
+                    key: ${{runner.os}}-pip-${{hashFiles('requirements.txt') }}
                     restore-keys: |
                         ${{ runner.os }}-pip-
 
@@ -65,17 +65,14 @@ jobs:
 
             -   name: Collect static files (if needed)
                 run: |
-                    cd backend
                     python manage.py collectstatic --noinput --clear
 
             -   name: Run makemigrations
                 run: |
-                    cd backend
                     python ./manage.py makemigrations
 
             -   name: Run migrate
                 run: |
-                    cd backend
                     python manage.py migrate
 
             -   name: Run pre-commit hooks
@@ -84,7 +81,7 @@ jobs:
                     pip install pre-commit
                     pre-commit run --all-files
 
-            -   name: Run backend tests
+            -   name: Run tests
                 working-directory: .
                 run: |
                     python manage.py test __tsts__/tests_person/
@@ -100,7 +97,7 @@ jobs:
             -   name: Upload coverage to Codecov
                 uses: codecov/codecov-action@v5.5.1
                 with:
-                    file: ./backend/coverage.xml
+                    file: ./coverage.xml
                     flags: django,unittests,api
                     name: codecov-umbrella
                     fail_ci_if_error: false
@@ -115,7 +112,7 @@ jobs:
             -   name: Clear GitHub Actions cache
                 run: rm -rf $HOME/.cache/actions
     cicd_deploy:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-latest test_backend
         strategy:
             matrix:
                 python-version: [ '3.12' ]
