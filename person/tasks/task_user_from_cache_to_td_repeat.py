@@ -8,9 +8,13 @@ import logging
 from celery import shared_task
 from redis import Redis
 
-from dotenv_ import DB_TO_RADIS_CACHE_USERS, DB_TO_RADIS_HOST, DB_TO_RADIS_PORT
 from logs import configure_logging
 from person.views_api.serializers import CacheUsersSerializer
+from project.settings_conf.settings_env import (
+    DB_TO_RADIS_CACHE_USERS,
+    DB_TO_RADIS_HOST,
+    DB_TO_RADIS_PORT,
+)
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)

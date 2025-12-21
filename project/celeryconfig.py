@@ -2,7 +2,12 @@
 # result_backend = "redis://83.166.245.209:6380/0"
 import os
 
-from dotenv_ import IS_DEBUG, DB_TO_RADIS_HOST, DB_TO_RADIS_PORT, REDIS_HOST
+from project.settings_conf.settings_env import (
+    DB_TO_RADIS_HOST,
+    DB_TO_RADIS_PORT,
+    IS_DEBUG,
+    REDIS_HOST,
+)
 
 broker_url = f"redis://{REDIS_HOST}:{DB_TO_RADIS_PORT}/0"
 result_backend = f"redis://{REDIS_HOST}:{DB_TO_RADIS_PORT}/0"

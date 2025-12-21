@@ -1,9 +1,15 @@
 import os
+from pathlib import Path
 
 import dotenv
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+print(f"===BASE_DIR=================== {BASE_DIR} ======================BASE_DIR=====")
 dotenv.load_dotenv()
-
+IS_DEBUG = os.getenv("IS_DEBUG", "1")
+DEBUG = True if int(IS_DEBUG) == 1 else False
+# '''' .ENV ''''
 IS_DEBUG = os.getenv("IS_DEBUG", "")
 PYTHONPATH = os.getenv("PYTHONPATH", "")
 SECRET_KEY_DJ = os.getenv("SECRET_KEY_DJ", "")
@@ -44,3 +50,4 @@ URL_REDIRECT_IF_NOTGET_AUTHENTICATION = os.getenv(
     "URL_REDIRECT_IF_NOTGET_AUTHENTICATION", ""
 )
 URL_REDIRECT_IF_GET_AUTHENTICATION = os.getenv("URL_REDIRECT_IF_GET_AUTHENTICATION", "")
+DJANGO_ENV = f'{os.getenv("DJANGO_ENV", "production")}'

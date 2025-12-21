@@ -9,72 +9,31 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+from django.utils.translation import gettext_lazy as _
 
-import os
-from datetime import datetime, timedelta
-from pathlib import Path
+from project.settings_conf.settings_db import *
+from project.settings_conf.settings_email import *
+from project.settings_conf.settings_options import *
 
-from dotenv_ import (
-    APP_PORT,
-    APP_TIME_ZONE,
-    DATABASE_ENGINE_LOCAL,
-    DATABASE_ENGINE_REMOTE,
-    DATABASE_LOCAL,
-    DB_ENGINE,
-    DB_TO_RADIS_HOST,
-    DB_TO_RADIS_PORT,
-    IS_DEBUG,
-    JWT_ACCESS_TOKEN_LIFETIME_MINUTES,
-    JWT_REFRESH_TOKEN_LIFETIME_DAYS,
-    POSTGRES_DB,
-    POSTGRES_HOST,
-    POSTGRES_PASSWORD,
-    POSTGRES_PORT,
-    POSTGRES_USER,
-    SECRET_KEY_DJ,
-    SMTP_HOST,
-    SMTP_PASS,
-    SMTP_PORT,
-    SMTP_USER,
-)
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-
+configure_logging(logging.INFO)
+log = logging.getLogger(__name__)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = f"{SECRET_KEY_DJ}"
 if not SECRET_KEY:
-    raise ValueError("SECRET_KEY must be set in environment variables")
-# SECURITY WARNING: don't run with debug turned on in production!
+    text_e = "SECRET_KEY must be set in environment variables"
+    log.error(text_e)
+    raise ValueError(text_e)
 
-# """" HOST """"
-ALLOWED_HOSTS = [
-    f"{DB_TO_RADIS_HOST}",
-    "127.0.0.1",
-]
-# """" DATABASE """"
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": f"{DB_ENGINE}",
-        "NAME": f"{POSTGRES_DB}",
-        "USER": f"{POSTGRES_USER}",
-        "PASSWORD": f"{POSTGRES_PASSWORD}",
-        "HOST": f"{POSTGRES_HOST}",
-        "PORT": f"{POSTGRES_PORT}",
-        "KEY_PREFIX": "drive_",  # it's my prefix for the keys
-    }
-}
 
 # """" DEBUG """"
 DEBUG = True if int(IS_DEBUG) == 1 else False
 SECURE_SSL_REDIRECT = False  # т.к. запуск на http:
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "http")
+SECURE_BROWSER_XSS_FILTER = True
 if DEBUG:
     SECURE_BROWSER_XSS_FILTER = False
     SECURE_CONTENT_TYPE_NOSNIFF = False
@@ -86,11 +45,7 @@ if DEBUG:
     WHITENOISE_USE_FINDERS = False
 
     ALLOWED_HOSTS.pop(0)
-
-    DATABASES["default"] = {
-        "ENGINE": f"{DATABASE_ENGINE_LOCAL}",
-        "NAME": BASE_DIR / f"{DATABASE_LOCAL}",
-    }
+SECURE_SSL_REDIRECT = False # https is True & http is False
 
 # Application definition
 INSTALLED_APPS = [
@@ -193,13 +148,14 @@ PBKDF2_ITERATIONS = 720000
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = "en"
-
-TIME_ZONE = f"{APP_TIME_ZONE}"
+TIME_ZONE = f"{APP_TIME_ZONE.strip()}"
 
 USE_I18N = True
-
 USE_TZ = True
 
+DATE_FORMAT = "d.m.Y"
+DATETIME_FORMAT = "d.m.Y H:i"
+USE_L10N = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
@@ -209,6 +165,19 @@ STATICFILES_DIRS = [
 STATIC_ROOT = os.path.join(BASE_DIR, "collectstatic/")
 STATIC_URL = "/static/"
 
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+# Application definition
+# file extension
+f_extension = "csv, docx, pdf, rtf, txt, xlsx, zip"
+WAGTAILDOCS_EXTENSIONS = list(
+    f_extension.split(", ")
+)
+
+# Options for file's repository/source
+DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -216,177 +185,19 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 DEFAULT_CHARSET = "utf-8"
 AUTH_USER_MODEL = "person.Users"
 
-# '''Cookie'''
-SESSION_COOKIE_HTTPONLY = False  # CSRF_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = False  # change to the True - CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SAMESITE = "Lax"  # CSRF_COOKIE_SAMESITE = 'Lax'  # or 'Strict'
-SESSION_COOKIE_AGE = 86400
-
-# '''CORS'''
-# False - this value is default and it's means what the server don't accept from other sources.
-CORS_ORIGIN_ALLOW_ALL = False
-# Here, we allow the URL list for publicated
-CORS_ALLOWED_ORIGINS = [
-    "http://0.0.0.0:8000",
-    "http://127.0.0.1:8000",
-]
-
-# https://github.com/adamchainz/django-cors-headers?tab=readme-ov-file#csrf-integration
-# https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-CSRF_TRUSTED_ORIGINS
-# This is list from private of URL
-CSRF_TRUSTED_ORIGINS = [*CORS_ALLOWED_ORIGINS]
-# Allow the cookie in HTTP request.
-CORS_ALLOW_CREDENTIALS = True
-# Allow the methods to the methods in HTTP
-CORS_ALLOW_METHODS = [
-    "DELETE",
-    "GET",
-    "OPTIONS",
-    "PATCH",
-    "POST",
-    "PUT",
-]
-
-CORS_ALLOW_HEADERS = [
-    "accept",
-    "accept-encoding",
-    "Authorization",
-    "content-type",
-    "dnt",
-    "origin",
-    "user-agent",
-    "x-csrftoken",
-    "x-requested-with",
-    "Accept-Language",
-    "Content-Language",
-]
-
 #''''LOGING AUTHENTICATION'''
-
 LOGIN_URL = "/auth/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
-# PASSWORD_RESET_TIMEOUT_DAYS = 1
-# https://docs.djangoproject.com/en/4.2/topics/auth/customizing/
-AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
-
-"""REST_FRAMEWORK SETTINGS AND JWT-tokens"""
-# https://pypi.org/project/djangorestframework-simplejwt/4.3.0/
-# https://django-rest-framework-simplejwt.readthedocs.io/en/latest/stateless_user_authentication.html
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication",
-        "rest_framework.authentication.SessionAuthentication",  # This for works with sessions
-        "rest_framework.authentication.TokenAuthentication",  # Options for API
-    ),
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-}
-
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(JWT_ACCESS_TOKEN_LIFETIME_MINUTES)),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(JWT_REFRESH_TOKEN_LIFETIME_DAYS)),
-    "SIGNING_KEY": SECRET_KEY,
-}
 
 # """DEBUG TOOLBAR - SERVER DAPHNE"""
 DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": lambda request: True,
 }
 
-# """EMAIL_BACKEND in down for a product"""
-# https://docs.djangoproject.com/en/4.2/topics/email/#smtp-backend
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # console
-# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend" # IT's real email service
-# EMAIL_BACKEND in down for a development
 
-# https://docs.djangoproject.com/en/4.2/topics/email/#console-backend
-# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-from-email
-# DEFAULT_FROM_EMAIL = f"smtp.{EMAIL_HOST_USER_}"
-
-# https://docs.djangoproject.com/en/4.2/ref/settings/#std-setting-SMTP_HOST
-# SMTP_HOST = 'smtp.example.com' # Замените на адрес вашего SMTP-сервера
-# SMTP_HOST = 'mail.privateemail.com'
-EMAIL_HOST = f"{SMTP_HOST}"
-# https://docs.djangoproject.com/en/4.2/ref/settings/#std-setting-EMAIL_PORT
-EMAIL_PORT = int(SMTP_PORT)  # 465
-# https://docs.djangoproject.com/en/4.2/ref/settings/#email-host-user
-EMAIL_HOST_USER = f"{SMTP_USER}"
-
-# https://docs.djangoproject.com/en/4.2/ref/settings/#email-host-password
-EMAIL_HOST_PASSWORD = f"{SMTP_PASS}"
-
-# https://docs.djangoproject.com/en/4.2/ref/settings/#email-use-ssl
-EMAIL_USE_SSL = True  # если порт 465
-
-# https://docs.djangoproject.com/en/4.2/ref/settings/#email-use-tls
-# EMAIL_USE_TLS = False
-# EMAIL_USE_TLS = True  # если порт 587
-# https://docs.djangoproject.com/en/4.2/ref/settings/#email-timeout
-EMAIL_TIMEOUT = 60
-
-# https://docs.djangoproject.com/en/4.2/ref/settings/#std-setting-EMAIL_USE_LOCALTIME
-EMAIL_USE_LOCALTIME = True
-
-# https://docs.djangoproject.com/en/4.2/ref/settings/#email-subject-prefix
-# EMAIL_SUBJECT_PREFIX
-
-
-# '''WEBPACK_LOADER'''
-WEBPACK_LOADER = {
-    "DEFAULT": {
-        "CACHE": not DEBUG,
-        # 'BUNDLE_DIR_NAME': '..\\frontend\\src\\bundles',
-        "BUNDLE_DIR_NAME": "static",
-        "STATS_FILE": os.path.join(BASE_DIR, "bundles/webpack-stats.json"),
-        "POLL_INTERVAL": 0.1,
-        "TIMEOUT": None,
-        "TEST": {
-            "NAME": "test_cloud",
-        },
-        "IGNORE": [
-            # '.+\.map$'
-            r".+\.hot-update.js",
-            r".+\.map",
-        ],
-        "LOADER_CLASS": "webpack_loader.loader.WebpackLoader",
-    }
-}
-
-# '''lOGGING'''
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
-    },
-}
-
-# """SWAGGER"""
-# https://drf-yasg.readthedocs.io/en/stable/security.html#security-definitions
-
-SWAGGER_USE_COMPAT_RENDERERS = False
-SWAGGER_SETTINGS = {
-    "SECURITY_DEFINITIONS": {
-        "Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"}
-    },
-    "USE_SESSION_AUTH": False,
-    "JSON_EDITOR": True,
-    "VALIDATOR_URL": None,
-    "exclude_namespaces": [],
-}
-SPECTACULAR_SETTINGS = {
-    "TITLE": "Your API",
-    "DESCRIPTION": "Your project description",
-    "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,
-}
+# '''Cookie'''
+SESSION_COOKIE_HTTPONLY = False  # CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False  # change to the True - CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "Lax"  # CSRF_COOKIE_SAMESITE = 'Lax'  # or 'Strict'
+SESSION_COOKIE_AGE = 86400

@@ -32,7 +32,6 @@ from pyasn1.type.univ import Boolean
 from rest_framework import serializers, status
 from rest_framework.response import Response
 
-from dotenv_ import SECRET_KEY_DJ
 from logs import configure_logging
 from person.access_tokens import AccessToken
 from person.apps import signal_user_registered
@@ -46,7 +45,8 @@ from person.tasks.task_cache_hew_user import task_postman_for_user_id
 from person.views_api.redis_person import RedisOfPerson
 from person.views_api.serializers import AsyncUsersSerializer
 from project.service import sync_for_async
-from project.settings import SIMPLE_JWT
+from project.settings_conf.settings_env import SECRET_KEY_DJ
+from project.settings_conf.settings_security import SIMPLE_JWT
 
 load_dotenv()
 log = logging.getLogger(__name__)
@@ -400,7 +400,7 @@ class UserViews(ViewSet):
         """
         user: U | AnonymousUser = request.user
         message = "%s: ERROR => " % (
-            UserViews.__class__.__name__ + "." + self.delete.__name__
+            self.__class__.__name__ + "." + self.delete.__name__
         )
         result_regex = re.compile(r"[0-9]+").search(pk)
         response = Response()
@@ -484,12 +484,12 @@ class UserViews(ViewSet):
             fals_data = [item for item in check_validate if not item]
             if len(fals_data) > 0:
                 log.error(
-                    "%s: data is not validate" % UserViews.__class__.__name__
+                    "%s: data is not validate" % self.__class__.__name__
                     + "."
                     + self.create.__name__
                 )
                 raise ValueError(
-                    "%s: data is not validate" % UserViews.__class__.__name__
+                    "%s: data is not validate" % self.__class__.__name__
                     + "."
                     + self.create.__name__
                 )
@@ -497,7 +497,7 @@ class UserViews(ViewSet):
             log.error(
                 "%s: ERROR => %s"
                 % (
-                    UserViews.__class__.__name__ + "." + self.create.__name__,
+                    self.__class__.__name__ + "." + self.create.__name__,
                     error.args[0],
                 )
             )
@@ -517,7 +517,7 @@ class UserViews(ViewSet):
             log.error(
                 "%s: ERROR => %s"
                 % (
-                    UserViews.__class__.__name__ + "." + self.create.__name__,
+                    self.__class__.__name__ + "." + self.create.__name__,
                     error.args[0],
                 )
             )
@@ -560,7 +560,7 @@ class UserViews(ViewSet):
                 log.error(
                     "%s: ERROR => %s"
                     % (
-                        UserViews.__class__.__name__ + "." + self.create.__name__,
+                        self.__class__.__name__ + "." + self.create.__name__,
                         error.args[0],
                     )
                 )
@@ -581,7 +581,7 @@ class UserViews(ViewSet):
                 log.error(
                     "%s: ERROR => %s"
                     % (
-                        UserViews.__class__.__name__ + "." + self.create.__name__,
+                        self.__class__.__name__ + "." + self.create.__name__,
                         error.args[0],
                     )
                 )
@@ -604,7 +604,7 @@ class UserViews(ViewSet):
                 log.error(
                     "%s: ERROR => %s"
                     % (
-                        UserViews.__class__.__name__ + "." + self.create.__name__,
+                        self.__class__.__name__ + "." + self.create.__name__,
                         error.args[0],
                     )
                 )
@@ -613,7 +613,7 @@ class UserViews(ViewSet):
             return response
         log.error(
             "%s: User was created before."
-            % (UserViews.__class__.__name__ + "." + self.create.__name__,)
+            % (self.__class__.__name__ + "." + self.create.__name__,)
         )
         response.data = {"data": "User was created before."}
         return response
@@ -931,7 +931,7 @@ class UserViews(ViewSet):
                 log.error(
                     "%s: ERROR => %s"
                     % (
-                        UserViews.__class__.__name__ + "." + self.active.__name__,
+                        self.__class__.__name__ + "." + self.active.__name__,
                         e.args[0],
                     )
                 )
@@ -1003,13 +1003,13 @@ class UserViews(ViewSet):
                 log.error(
                     "%s: ERROR => %s"
                     % (
-                        UserViews.__class__.__name__ + "." + self.active.__name__,
+                        self.__class__.__name__ + "." + self.active.__name__,
                         error.args[0],
                     )
                 )
                 log.error(
                     "%s: CACHE OF USER is invalid. ERROR => %s"
-                    % (UserViews.__class__.__name__ + self.login.__name__, error)
+                    % (self.__class__.__name__ + self.login.__name__, error)
                 )
                 #   Вынести в декоратор !!!!!!!!!!!!!!!!!!!!!!!!!!!!
             try:
@@ -1075,7 +1075,7 @@ class UserViews(ViewSet):
                 log.error(
                     "%s: ERROR => %s"
                     % (
-                        UserViews.__class__.__name__ + "." + self.active.__name__,
+                        self.__class__.__name__ + "." + self.active.__name__,
                         error.args[0],
                     )
                 )
@@ -1156,7 +1156,7 @@ class UserViews(ViewSet):
                         log.error(
                             "%s: ERROR => %s"
                             % (
-                                UserViews.__class__.__name__
+                                self.__class__.__name__
                                 + "."
                                 + UserViews.inactive.__name__,
                                 error.args[0],
@@ -1165,7 +1165,7 @@ class UserViews(ViewSet):
                         raise ValueError(
                             "%s: ERROR => %s"
                             % (
-                                UserViews.__class__.__name__
+                                self.__class__.__name__
                                 + "."
                                 + UserViews.inactive.__name__,
                                 error.args[0],
@@ -1441,7 +1441,7 @@ class UserViews(ViewSet):
                             log.error(
                                 "%s: ERROR => %s"
                                 % (
-                                    UserViews.__class__.__name__
+                                    self.__class__.__name__
                                     + "."
                                     + UserViews.update.__name__,
                                     "You have not rights!",
@@ -1450,7 +1450,7 @@ class UserViews(ViewSet):
                             raise ValueError(
                                 "%s: ERROR => %s"
                                 % (
-                                    UserViews.__class__.__name__
+                                    self.__class__.__name__
                                     + "."
                                     + UserViews.update.__name__,
                                     "You have not rights!",
@@ -1473,7 +1473,7 @@ class UserViews(ViewSet):
                         log.error(
                             "%s: ERROR => %s"
                             % (
-                                UserViews.__class__.__name__
+                                self.__class__.__name__
                                 + "."
                                 + UserViews.update.__name__,
                                 error.args[0],
@@ -1482,7 +1482,7 @@ class UserViews(ViewSet):
                         raise ValueError(
                             "%s: ERROR => %s"
                             % (
-                                UserViews.__class__.__name__
+                                self.__class__.__name__
                                 + "."
                                 + UserViews.update.__name__,
                                 error.args[0],
@@ -1557,7 +1557,7 @@ class UserViews(ViewSet):
         user = request.user
         response = Response(status=status.HTTP_401_UNAUTHORIZED)
         message = "%s: ERROR => " % (
-            UserViews.__class__.__name__ + "." + self.delete.__name__
+            self.__class__.__name__ + "." + self.delete.__name__
         )
         result_regex = re.compile(r"[0-9]+").search(pk)
         if not result_regex or (result_regex and len(result_regex[0]) != len(pk)):
@@ -1583,7 +1583,7 @@ class UserViews(ViewSet):
                         loop.run_until_complete(task)
                     except Exception as error:
                         message = "%s: ERROR => " % (
-                            UserViews.__class__.__name__
+                            self.__class__.__name__
                             + "."
                             + self.delete.__name__
                             + "."
@@ -1606,7 +1606,7 @@ class UserViews(ViewSet):
                         loop.run_until_complete(task)
                     except Exception as error:
                         message = "%s: ERROR => " % (
-                            UserViews.__class__.__name__
+                            self.__class__.__name__
                             + "."
                             + self.delete.__name__
                             + "."

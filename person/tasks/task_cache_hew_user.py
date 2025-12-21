@@ -11,12 +11,12 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from redis import Redis, TimeoutError
 
-from dotenv_ import DB_TO_RADIS_CACHE_USERS, DB_TO_RADIS_HOST
 from logs import configure_logging
 from person.interfaces import TypeUser
 from person.models import Users
 from person.redis_utils import get_redis_client
 from person.views_api.serializers import CacheUsersSerializer
+from project.settings_conf.settings_env import DB_TO_RADIS_CACHE_USERS, DB_TO_RADIS_HOST
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.settings")
 

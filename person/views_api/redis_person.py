@@ -11,9 +11,9 @@ from typing import Any, Dict, Union
 from redis.asyncio.client import Redis
 from redis.exceptions import ConnectionError
 
-from dotenv_ import DB_TO_RADIS_HOST, DB_TO_RADIS_PORT
 from logs import configure_logging
 from person.binaries import Binary
+from project.settings_conf.settings_env import DB_TO_RADIS_HOST, DB_TO_RADIS_PORT
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)

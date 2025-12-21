@@ -3,10 +3,10 @@ person/contribute/utilite.py
 """
 
 from django.core.signing import Signer
-from dotenv_ import APP_PROTOCOL, APP_HOST, APP_PORT
 from django.template.loader import render_to_string
 
 from person.models import Users
+from project.settings_conf.settings_env import APP_HOST, APP_PORT, APP_PROTOCOL
 
 signer = Signer()
 

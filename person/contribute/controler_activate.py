@@ -12,23 +12,25 @@ the function (below).
 
 """
 
-from datetime import datetime, timezone
 import asyncio
+from datetime import datetime, timezone
+
 from django.contrib.auth import authenticate, login
 from django.core.cache import cache
 from django.core.signing import BadSignature
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+
 from person.contribute.sessions import create_signer
 from person.contribute.utilite import signer
 from person.models import Users
-from dotenv_ import (
+from person.tasks.task_user_is_authenticate import task_user_authenticate
+from project.settings import SESSION_COOKIE_AGE
+from project.settings_conf.settings_env import (
     URL_REDIRECT_IF_GET_AUTHENTICATION,
     URL_REDIRECT_IF_NOTGET_AUTHENTICATION,
 )
-from person.tasks.task_user_is_authenticate import task_user_authenticate
-from project.settings import SESSION_COOKIE_AGE
 
 
 def user_activate(request, sign):
