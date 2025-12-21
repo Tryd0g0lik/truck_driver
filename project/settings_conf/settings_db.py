@@ -56,9 +56,9 @@ try:
             DATABASES = {
                 "default": {
                     "ENGINE": "django.db.backends.postgresql",
-                    "NAME": os.getenv("TEST_DB_NAME", "test_myapp_db"),
-                    "USER": os.getenv("TEST_DB_USER", "test_user"),
-                    "PASSWORD": os.getenv("TEST_DB_PASSWORD", "test_password"),
+                    "NAME": os.getenv("POSTGRES_DB", "test_myapp_db"),
+                    "USER": os.getenv("POSTGRES_USER", "test_user"),
+                    "PASSWORD": os.getenv("POSTGRES_PASSWORD", "test_password"),
                     "HOST": f"{POSTGRES_HOST}",
                     "PORT": f"{POSTGRES_PORT}",
                     "KEY_PREFIX": "drive_test_",  # it's my prefix for the keys
