@@ -9,10 +9,9 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-from django.utils.translation import gettext_lazy as _
-
 from project.settings_conf.settings_db import *
 from project.settings_conf.settings_email import *
+from project.settings_conf.settings_env import *
 from project.settings_conf.settings_options import *
 
 configure_logging(logging.INFO)

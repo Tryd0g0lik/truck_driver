@@ -1,6 +1,6 @@
 import os
 
-from project.settings_conf.settings_env import *
+from project.settings_conf.settings_env import BASE_DIR, DEBUG
 from project.settings_conf.settings_security import CORS_ALLOWED_ORIGINS
 
 # '''WEBPACK_LOADER'''
