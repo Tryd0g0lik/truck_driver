@@ -14,6 +14,7 @@ jobs:
             POSTGRES_DB_PORT: ${{ secrets.POSTGRES_DB_PORT }}
             POSTGRES_DB_HOST: ${{ secrets.POSTGRES_DB_HOST }}
             DJANGO_SECRET_KEY: ${{ secrets.SECRET_KEY_DJ }}
+            DJANGO_ENV: ${{ secrets.DJANGO_ENV }}
             IS_DEBUG: 0
             DATABASE_URL: "postgresql://${{  secrets.POSTGRES_DB_USER }}:${{ secrets.POSTGRES_DB_PASSWORD }}@${{ secrets.POSTGRES_DB_HOST }}:${{ secrets.POSTGRES_DB_PORT }}/${{ secrets.POSTGRES_DB  }}"
             SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
