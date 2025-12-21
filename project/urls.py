@@ -15,17 +15,17 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.contrib import admin
-from django.urls import path, include, re_path
 from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path, re_path
 from django.views.generic import TemplateView
-from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
+from person.contribute.controler_activate import user_activate
 from project import settings
 from project.urls_api import urlpatterns as api_urls
-from person.contribute.controler_activate import user_activate
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -35,7 +35,10 @@ schema_view = get_schema_view(
         contact=openapi.Contact(email="work80@mail.ru"),
     ),
     public=True,
-    permission_classes=(permissions.AllowAny,),
+    permission_classes=[permissions.AllowAny],
+    patterns=[
+            path("api/", include((api_urls, "api_keys"), namespace="api_keys")),
+        ],
 )
 
 urlpatterns = [
