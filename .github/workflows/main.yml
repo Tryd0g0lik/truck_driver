@@ -70,8 +70,8 @@ jobs:
             -   name: Run makemigrations
                 env:
                     SMTP_PORT: 465
-                    SECRET_KEY_DJ: ${{ env.SECRET_KEY_DJ }}
-                    SECRET_KEY: ${{ env.SECRET_KEY_DJ }}
+                    SECRET_KEY_DJ: ${{ env.SECRET_KEY }}
+                    SECRET_KEY: ${{ env.SECRET_KEY }}
                     IS_DEBUG: 0
                 run: |
                     python ./manage.py makemigrations
