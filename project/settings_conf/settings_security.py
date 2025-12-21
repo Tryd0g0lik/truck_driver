@@ -11,8 +11,10 @@ log = logging.getLogger(__name__)
 CORS_ORIGIN_ALLOW_ALL = False
 # Here, we allow the URL list for publicated
 CORS_ALLOWED_ORIGINS = [
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
+
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+
 ]
 
 # https://github.com/adamchainz/django-cors-headers?tab=readme-ov-file#csrf-integration

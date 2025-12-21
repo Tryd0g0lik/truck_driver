@@ -2,7 +2,7 @@
 person/urls_api.py
 """
 
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from person.views_api.binary_views import BinaryViews
@@ -16,7 +16,7 @@ urlpatterns = [
     path("", include(router.urls), name="persons_api"),
     path(
         "person/0/active/",
-        UserViews.as_view({"post": "active"}),
+        UserViews.as_view({"patch": "active"}),
         name="person_active",
     ),
     path(

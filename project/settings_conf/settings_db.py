@@ -2,6 +2,7 @@ import logging
 
 from logs import configure_logging
 from project.settings_conf.settings_env import *
+from project.settings_conf.settings_security import CORS_ALLOWED_ORIGINS
 
 configure_logging(logging.INFO)
 log = logging.getLogger(__name__)
@@ -20,8 +21,8 @@ def get_allowed_hosts(allowed_hosts: str):
     hosts = [h.strip() for h in hosts if h.strip()]
 
     if DJANGO_ENV == "production":
+        hosts.insert(0, f"{APP_HOST}")
         hosts += [
-            f"{APP_HOST}",
             "172.19.0.2",
             "db",
             "backend",
@@ -43,6 +44,8 @@ try:
     # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
     if DJANGO_ENV == "testing":
         log.info(f"DJANGO_ENV == 'testing'': {DJANGO_ENV == "testing"}")
+        CORS_ALLOWED_ORIGINS += ["http://127.0.0.1:8000",
+                                 "http://localhost:8000", ]
         # TESTING
         if DEBUG:
             DATABASES = {
@@ -53,6 +56,7 @@ try:
             }
             log.info("DB: run 'test_person_db.sqlite3'")
         elif not DEBUG:
+
             DATABASES = {
                 "default": {
                     "ENGINE": "django.db.backends.postgresql",
@@ -70,11 +74,13 @@ try:
         DATABASES = {
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",
-                "NAME": BASE_DIR / "person_db.sqlite3",
+                "NAME": BASE_DIR / "truckdriver_db.sqlite3",
             }
         }
         log.info("DB: run 'person_db.sqlite3'")
     else:
+        CORS_ALLOWED_ORIGINS += ["http://127.0.0.1:8000",
+        "http://localhost:8000",]
 
         # PRODUCTION
         DATABASES = {

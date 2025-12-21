@@ -963,6 +963,7 @@ class UserViews(ViewSet):
             request.__setattr__("user", user)
             # SET, Caching a new session & person of user.
             user.is_active = True
+            await user.asave()
             serializers = AsyncUsersSerializer(user)
             user_dict = await sync_for_async(lambda: serializers.data)
             kwargs = {"user": user_dict, "db": 1}

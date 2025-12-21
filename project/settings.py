@@ -42,8 +42,6 @@ if DEBUG:
     SECURE_CROSS_ORIGIN_OPENER_POLICY = None
     WHITENOISE_MAX_AGE = 0
     WHITENOISE_USE_FINDERS = False
-
-    ALLOWED_HOSTS.pop(0)
 SECURE_SSL_REDIRECT = False # https is True & http is False
 
 # Application definition
