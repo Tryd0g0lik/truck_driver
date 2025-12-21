@@ -2,54 +2,51 @@
 person/views_api/users_views.py
 """
 
+import asyncio
 import base64
 import json
+import logging
+import re
 import threading
 import time
-import logging
-import asyncio
-import re
 from datetime import datetime
 from http.client import responses
 from tkinter.scrolledtext import example
+from typing import Callable, List, Union
 
-from typing import List, Union, Callable
-
+from adrf.viewsets import ViewSet
+from django.contrib.auth import login as login_user
+from django.contrib.auth.models import AnonymousUser, Group
+from django.db import connections
 from django.db.models.expressions import result
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.defaultfilters import title
-from keyring.util.platform_ import data_root
-from kombu.exceptions import OperationalError
-from django.contrib.auth import login as login_user
-from django.contrib.auth.models import AnonymousUser
-from django.db import connections
-from django.http import JsonResponse, HttpRequest, HttpResponse
-from pontos.helper import regex
-from pyasn1.type.univ import Boolean
-from rest_framework.response import Response
-from rest_framework import serializers, status
-from adrf.viewsets import ViewSet
-from django.contrib.auth.models import Group
-from person.apps import signal_user_registered
-from person.cookies import Cookies
-from person.interfaces import U
-from person.permissions import is_all, is_reader
-from person.tasks.task_cache_hew_user import task_postman_for_user_id
-from person.models import Users
-from person.hasher import Hasher
-from person.views_api.redis_person import RedisOfPerson
-from person.views_api.serializers import AsyncUsersSerializer
-from person.access_tokens import AccessToken
+from dotenv import load_dotenv
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from keyring.util.platform_ import data_root
+from kombu.exceptions import OperationalError
+from pontos.helper import regex
+from pyasn1.type.univ import Boolean
+from rest_framework import serializers, status
+from rest_framework.response import Response
 
+from dotenv_ import SECRET_KEY_DJ
+from logs import configure_logging
+from person.access_tokens import AccessToken
+from person.apps import signal_user_registered
+from person.binaries import Binary
+from person.cookies import Cookies
+from person.hasher import Hasher
+from person.interfaces import U
+from person.models import Users
+from person.permissions import is_all, is_reader
+from person.tasks.task_cache_hew_user import task_postman_for_user_id
+from person.views_api.redis_person import RedisOfPerson
+from person.views_api.serializers import AsyncUsersSerializer
 from project.service import sync_for_async
 from project.settings import SIMPLE_JWT
-from person.binaries import Binary
-from dotenv_ import SECRET_KEY_DJ
-
-from logs import configure_logging
-from dotenv import load_dotenv
 
 load_dotenv()
 log = logging.getLogger(__name__)
@@ -802,6 +799,14 @@ class UserViews(ViewSet):
         data = request.data
         # Validate of data
         response = Response(status=status.HTTP_401_UNAUTHORIZED)
+        log.info(f"===== User: '{user.__str__()}' logged ==== ")
+        log.info(f"===== Data: '{str(data)}' logged ==== ")
+        log.info(f" ==== '{self.active.__name__}' method ")
+        log.info(f" ==== Type: '{type(data.get("password"))}' data ")
+        log.info(
+            "[%s.%s]: '%s'"
+            % (self.__class__.__name__, self.active.__name__, data.get("password"))
+        )
         password = data.get("password").split().__getitem__(0).strip()
         username = data.get("username").split().__getitem__(0).strip()
         try:
@@ -814,6 +819,10 @@ class UserViews(ViewSet):
             response.data = {"data": error.args[0]}
             return response
         if not user.is_authenticated and not user.is_active:
+            log.info(
+                "[%s.%s]: if not user.is_authenticated and not user.is_active"
+                % (self.__class__.__name__, self.active.__name__)
+            )
             try:
                 if not user.is_authenticated and None in response_validate:
                     # DATA IS NOT VALIDATED
@@ -823,22 +832,42 @@ class UserViews(ViewSet):
                     return response
                 hash_password = self.get_hash_password(password)
                 # Check exists of user to the both db
+                log.info(
+                    "[%s.%s]:  Check exists of user to the both db"
+                    % (self.__class__.__name__, self.active.__name__)
+                )
                 client = RedisOfPerson(db=1)
                 user_list: List[dict] = []
                 # 1/2 db
                 # we see to the redis. If there, we won't find, means that we would be
                 # looking to the relational db.
+                log.info(
+                    "[%s.%s]: we see to the redis. If there, we won't find, means that we would be"
+                    % (self.__class__.__name__, self.active.__name__)
+                )
                 async for key_one in iterator_get_person_cache(client):
                     # Here is a Radis
+                    log.info(
+                        "[%s.%s]: Here is a Radis"
+                        % (self.__class__.__name__, self.active.__name__)
+                    )
                     b_caches_user = await client.get(key_one)
                     caches_user = json.loads(b_caches_user.decode("utf-8"))
                     # check username
+                    log.info(
+                        "[%s.%s]: check username"
+                        % (self.__class__.__name__, self.active.__name__)
+                    )
                     if (
                         caches_user
                         and isinstance(caches_user, dict)
                         and caches_user.__getitem__("username") == username
                     ):
                         # We do actively for user when found his to the cache.
+                        log.info(
+                            "[%s.%s]: We do actively for user when found his to the cache."
+                            % (self.__class__.__name__, self.active.__name__)
+                        )
                         caches_user["is_active"] = True
                         user_list.append(caches_user)
                         break
@@ -847,17 +876,53 @@ class UserViews(ViewSet):
                 #  Проверить при авторизации !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 if len(user_list) == 0:
                     # Redis, didn't give for us anything, and we go to the relational db.
+                    log.info(
+                        "[%s.%s]: Redis, didn't give for us anything, and we go to the relational db."
+                        % (self.__class__.__name__, self.active.__name__)
+                    )
+
                     user_list: List[U] = [
                         view async for view in Users.objects.filter(username=username)
                     ]
+                    if len(user_list) == 0:
+                        log.info(
+                            "[%s.%s]: 'username' not found '."
+                            % (self.__class__.__name__, self.active.__name__)
+                        )
+                        response.data = {"data": "'username' not found"}
+                        response.status_code = status.HTTP_404_NOT_FOUND
+                        return response
+
+                    log.info(
+                        "[%s.%s]: 1." % (self.__class__.__name__, self.active.__name__)
+                    )
+                    log.info(
+                        "[%s.%s]: user_list: %s"
+                        % (
+                            self.__class__.__name__,
+                            self.active.__name__,
+                            str(user_list),
+                        )
+                    )
                     user_one = user_list.__getitem__(0).__getattribute__("id")
+                    log.info(
+                        "[%s.%s]: 2." % (self.__class__.__name__, self.active.__name__)
+                    )
                     # RUN THE CELERY's TASK - Update CACHE's USER. CHECK the  async_task_user_login by steps!!
+                    log.info(
+                        "[%s.%s]: RUN THE CELERY's TASK - Update CACHE's USER. CHECK the  async_task_user_login by steps!!"
+                        % (self.__class__.__name__, self.active.__name__)
+                    )
                     task_user_login.apply_async(kwargs={"user_id": user_one})
                     # we do actively for user when found his to the Users's model
                     user_list[0].is_active = True
                     serializ = AsyncUsersSerializer(user_list[0])
                     res = await sync_for_async((lambda: serializ.data))
                     user_list = [res.copy()]
+                    log.info(
+                        "[%s.%s]: user_list = [res.copy()]."
+                        % (self.__class__.__name__, self.active.__name__)
+                    )
                 if len(user_list) == 0:
                     response.data = {"data": "User was not found."}
                     response.status_code = status.HTTP_404_NOT_FOUND
@@ -876,6 +941,10 @@ class UserViews(ViewSet):
                 return response
             user_one = user_list.__getitem__(0)
             # Check password of user
+            log.info(
+                "[%s.%s]: Check password of user"
+                % (self.__class__.__name__, self.active.__name__)
+            )
             if type(user_list) == List[U]:
                 if not (user_one.__getattribute__("password") == hash_password):
                     log.error("Invalid password")
@@ -885,6 +954,10 @@ class UserViews(ViewSet):
                     kwargs={"user_id": user_one.__getattribute__("id")}
                 )
             # GET AUTHENTICATION (USER SESSION) IN DJANGO
+            log.info(
+                "[%s.%s]: GET AUTHENTICATION (USER SESSION) IN DJANGO "
+                % (self.__class__.__name__, self.active.__name__)
+            )
             kwargs = {"username": username, "password": hash_password}
             user = await asyncio.to_thread(get_object_or_404, Users, **kwargs)
             request.__setattr__("user", user)

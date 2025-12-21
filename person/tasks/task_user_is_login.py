@@ -6,8 +6,9 @@ import asyncio
 import logging
 from datetime import datetime
 from json import JSONDecodeError
-from redis.asyncio.client import Redis
+
 from celery import shared_task
+from redis.asyncio.client import Redis
 
 from logs import configure_logging
 from person.interfaces import TypeUser
@@ -64,13 +65,16 @@ async def async_task_user_login(user_id: int) -> dict | bool:
         # On the stage be avery one user is saved in cache
         log.info(
             f"%s: Expected dict, Yes or Not: {user_json}"
-            % (async_task_user_login.__name__)
+            % async_task_user_login.__name__
+        )
+        log.info(
+            f"%s: Expected TYPE: {type(user_json)}" % async_task_user_login.__name__
         )
         if len(user_json.keys()) == 0:
             log.error(
                 ValueError(
                     f"%s: Expected dict, got {type(user_json)}"
-                    % (async_task_user_login.__name__)
+                    % async_task_user_login.__name__
                 )
             )
             return {}

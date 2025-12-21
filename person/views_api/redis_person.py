@@ -6,7 +6,8 @@ import base64
 import json
 import logging
 import re
-from typing import Dict, Union, Any
+from typing import Any, Dict, Union
+
 from redis.asyncio.client import Redis
 from redis.exceptions import ConnectionError
 
@@ -81,7 +82,7 @@ class RedisOfPerson(Redis, Binary):
 
     async def async_get_cache_user(self, key: str) -> dict[str, Any] | bool:
         """
-        :param str key: Key for get data from redis's db. Example. User after registration hase the 'user:<user_index>:person' of key.
+        :param str key: Key for get data from redis's db. Example. User after registration hase the 'user:<user_index>:person' key.
         If you can't get data? check the db number. It where you are connected. Example.
         For person's cache is number '1'.
         :return: dict/json | False.

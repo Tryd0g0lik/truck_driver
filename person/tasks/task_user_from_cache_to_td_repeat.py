@@ -4,10 +4,11 @@ person/tasks/task_user_from_cache_to_td_repeat.py
 
 import json
 import logging
+
 from celery import shared_task
 from redis import Redis
 
-from dotenv_ import DB_TO_RADIS_HOST, DB_TO_RADIS_PORT, DB_TO_RADIS_CACHE_USERS
+from dotenv_ import DB_TO_RADIS_CACHE_USERS, DB_TO_RADIS_HOST, DB_TO_RADIS_PORT
 from logs import configure_logging
 from person.views_api.serializers import CacheUsersSerializer
 
@@ -42,7 +43,6 @@ def task_user_from_cache(self) -> bool:
                 "%s: Error => %s" % (task_user_from_cache.__name__, error.args[0])
             )
         )
-        return False
 
     return person_upgrade_data_of_user(client)
 

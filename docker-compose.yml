@@ -17,6 +17,11 @@ services:
             - "5432:5432"
     backend:
         container_name: truck_driver
+        healthcheck:
+            test: [ "CMD", "curl", "-f", "http://0.0.0.0:8000/" ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
         build:
           dockerfile: ./Dockerfile
           context: .

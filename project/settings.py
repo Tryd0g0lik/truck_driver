@@ -11,30 +11,31 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+from datetime import datetime, timedelta
 from pathlib import Path
-from datetime import timedelta, datetime
+
 from dotenv_ import (
+    APP_PORT,
+    APP_TIME_ZONE,
+    DATABASE_ENGINE_LOCAL,
+    DATABASE_ENGINE_REMOTE,
+    DATABASE_LOCAL,
     DB_ENGINE,
+    DB_TO_RADIS_HOST,
+    DB_TO_RADIS_PORT,
+    IS_DEBUG,
+    JWT_ACCESS_TOKEN_LIFETIME_MINUTES,
+    JWT_REFRESH_TOKEN_LIFETIME_DAYS,
     POSTGRES_DB,
     POSTGRES_HOST,
     POSTGRES_PASSWORD,
     POSTGRES_PORT,
     POSTGRES_USER,
     SECRET_KEY_DJ,
-    SMTP_USER,
-    SMTP_PASS,
     SMTP_HOST,
+    SMTP_PASS,
     SMTP_PORT,
-    IS_DEBUG,
-    APP_PORT,
-    DATABASE_LOCAL,
-    DATABASE_ENGINE_LOCAL,
-    DATABASE_ENGINE_REMOTE,
-    APP_TIME_ZONE,
-    JWT_ACCESS_TOKEN_LIFETIME_MINUTES,
-    JWT_REFRESH_TOKEN_LIFETIME_DAYS,
-    DB_TO_RADIS_HOST,
-    DB_TO_RADIS_PORT,
+    SMTP_USER,
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -54,7 +55,6 @@ if not SECRET_KEY:
 ALLOWED_HOSTS = [
     f"{DB_TO_RADIS_HOST}",
     "127.0.0.1",
-    "0.0.0.0",
 ]
 # """" DATABASE """"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -224,13 +224,11 @@ SESSION_COOKIE_AGE = 86400
 
 # '''CORS'''
 # False - this value is default and it's means what the server don't accept from other sources.
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_ALLOW_ALL = False
 # Here, we allow the URL list for publicated
 CORS_ALLOWED_ORIGINS = [
-    f"http://{DB_TO_RADIS_HOST}:{APP_PORT}",
-    f"http://{DB_TO_RADIS_HOST}:{DB_TO_RADIS_PORT}",
-    "http://127.0.0.1:8000",
     "http://0.0.0.0:8000",
+    "http://127.0.0.1:8000",
 ]
 
 # https://github.com/adamchainz/django-cors-headers?tab=readme-ov-file#csrf-integration

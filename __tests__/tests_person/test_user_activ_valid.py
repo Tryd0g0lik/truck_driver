@@ -4,18 +4,19 @@ __tests__/tests_person/test_user_activ_valid.py
 
 import asyncio
 import json
-import pytest
 import logging
-from __tests__.__fixtures__.fix import (
-    fix_get_user_of_db,
-    fix_del_user_of_db,
-    fix_get_session,
-)
-from logs import configure_logging
+
+import pytest
+from django.contrib.auth.models import AnonymousUser
+from django.http import JsonResponse
 from rest_framework.test import APIRequestFactory
 
-from django.contrib.auth.models import AnonymousUser
-
+from __tests__.__fixtures__.fix import (
+    fix_del_user_of_db,
+    fix_get_session,
+    fix_get_user_of_db,
+)
+from logs import configure_logging
 from person.views_api.redis_person import RedisOfPerson
 from project.views import CSRFTokenView
 
@@ -83,9 +84,18 @@ async def test_persone_active_valid(
     request = factory.get("auth/csrftoken/")
     csrf_response = await CSRFTokenView().get(request)
     log.info(
-        "%s: ACTIVE - 'csrf_response': %s"
-        % (test_persone_active_valid.__name__, str(csrf_response.__dict__))
+        "%s: ACTIVE - 'csrf_response': %s & type of csrf_response: %s"
+        % (
+            test_persone_active_valid.__name__,
+            str(csrf_response.__dict__),
+            type(csrf_response),
+        )
     )
+    # assert isinstance(csrf_response, JsonResponse)
+    # assert csrf_response.status_code == 200
+    # assert isinstance(csrf_response.data, str)
+    # assert len(csrf_response.data) > 5
+
     # CREATING THE REQUEST FOR USER's ACTIVATION
     request = factory.post("/person/0/active/", content_type="application/json")
     request.__setattr__("user", AnonymousUser())

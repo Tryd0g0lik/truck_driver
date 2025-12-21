@@ -6,15 +6,16 @@ import json
 import logging
 import os
 from typing import Union
+
 from celery import shared_task
 from celery.utils.log import get_task_logger
-
 from redis import Redis, TimeoutError
 
 from dotenv_ import DB_TO_RADIS_CACHE_USERS, DB_TO_RADIS_HOST
 from logs import configure_logging
 from person.interfaces import TypeUser
 from person.models import Users
+from person.redis_utils import get_redis_client
 from person.views_api.serializers import CacheUsersSerializer
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project.settings")
@@ -58,15 +59,18 @@ def person_to_redis(user_id_list: list[int]) -> Union[TypeUser, dict]:
     :param user_id_list: Index from new user, we receive in list format.
     :return:
     """
-    log.info("START CACHE: %s" % __name__)
-    client = Redis(
-        host=f"{DB_TO_RADIS_HOST}",
-        port=6380,
-        db=DB_TO_RADIS_CACHE_USERS,
-    )
 
+    log.info("START CACHE: %s" % __name__)
+    r = get_redis_client()
+    # client = Redis(
+    #     host=f"{DB_TO_RADIS_HOST}",
+    #     port=6380,
+    #     db=DB_TO_RADIS_CACHE_USERS,
+    # )
+    # переписать redis черех client
     try:
-        if not client.ping():
+
+        if not r.ping():
             log.error(ConnectionError("Redis connection failed"))
             return {}
         log.info("Client is ping")
@@ -89,21 +93,25 @@ def person_to_redis(user_id_list: list[int]) -> Union[TypeUser, dict]:
             # Now will be saving on the 27 hours.
             # 'task_user_from_cache' task wil be to upgrade postgres at ~ am 01:00
             # Timetable look the 'project.celery.app.base.Celery.conf'
-            client.set(
-                f"user:{str(user_dict.__getitem__("id"))}:person",
-                json.dumps(user_dict),
-                97200,
-            )
-            client.close()
-            log.info(
-                "User with %s ID was saved in Redis. The End"
-                % str(user_dict.__getitem__("id"))
-            )
-            response_last.update(user_dict)
+            look_key = (f"user:{str(user_dict.__getitem__("id"))}:person",)
+            try:
+                r.set(
+                    look_key,
+                    json.dumps(user_dict),
+                    nx=True,
+                    ex=97200,
+                )
+                r.close()
+                log.info(
+                    "User with %s ID was saved in Redis. The End"
+                    % str(user_dict.__getitem__("id"))
+                )
+                response_last.update(user_dict)
+            except Exception as e:
+                log.error("[%s]:ERROR =>  %s" % (__name__, e.args[0]))
+                r.delete(look_key)
         return response_last
     except Exception as error:
         log.error("[%s]: ERROR => %s" % (__name__, error.args.__getitem__(0)))
-        log.info(
-            ValueError("[%s]: ERROR => %s" % (__name__, error.args.__getitem__(0)))
-        )
+
         return {}

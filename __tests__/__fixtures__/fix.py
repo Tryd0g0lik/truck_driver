@@ -2,15 +2,15 @@
 __tests__/__fixtures__/fix.py
 """
 
-import pytest
 import logging
 
+import pytest
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.http import HttpRequest
 
 from logs import configure_logging
 from person.models import Users
 from project.service import sync_for_async
-from django.contrib.sessions.middleware import SessionMiddleware
 
 log = logging.getLogger(__name__)
 configure_logging(logging.INFO)
@@ -65,3 +65,49 @@ def fix_get_session():
         return request
 
     return factory
+
+
+@pytest.fixture
+@pytest.mark.django_db
+def fix_user_registration():
+    async def fix_persone_valid(
+        fix_get_session, factory, username, email, password, category, expected
+    ):
+        from django.contrib.auth.models import AnonymousUser
+        from rest_framework.test import APIRequestFactory
+
+        from person.views_api.users_views import UserViews
+
+        log.info(
+            "%s: START TEST WHERE 'username': %s & 'email': %s & 'password': %s & 'category': %s & 'expecteD': %s"
+            % (
+                fix_persone_valid.__name__,
+                username,
+                email,
+                password,
+                category,
+                expected,
+            )
+        )
+
+        log.info("%s: BEGINNING a REGISTRATION" % fix_persone_valid.__name__)
+        try:
+            request = factory.post("/person/", content_type="application/json")
+            request.__setattr__("user", AnonymousUser())
+            request.__setattr__(
+                "data",
+                {
+                    "username": username.strip(),
+                    "email": email.strip(),
+                    "password": password.strip(),
+                    "category": category.strip(),
+                },
+            )
+            # CREATE AND ADDING a SESSION FOR USER's ACTIVATION
+            request = await fix_get_session(request)
+            return request
+        except Exception as e:
+            log.error("%s: %s", (fix_persone_valid.__name__, e.args[0]))
+            return False
+
+    return fix_persone_valid
