@@ -52,7 +52,7 @@ try:
                 }
             }
             log.info("DB: run 'test_person_db.sqlite3'")
-        elif not DEBUG and DJANGO_ENV == "testing":
+        elif not DEBUG:
             DATABASES = {
                 "default": {
                     "ENGINE": "django.db.backends.postgresql",
@@ -64,7 +64,7 @@ try:
                     "KEY_PREFIX": "drive_test_",  # it's my prefix for the keys
                 }
             }
-            log.info("DB: run the postgres 'test_person_db.sqlite3'")
+            log.info("DB: run the postgres 'django.db.backends.postgresql'")
     elif DEBUG:
         # DEVELOPMENT
         DATABASES = {
@@ -93,6 +93,7 @@ try:
         }
         log.info("DB: RUN")
 except Exception as e:
+    log.error(f"✗ ERROR configuring database: {e}")
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
