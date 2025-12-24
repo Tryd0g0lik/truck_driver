@@ -28,6 +28,7 @@ def get_allowed_hosts(allowed_hosts: str):
             "backend",
             "nginx",
             "celery",
+            "celery_beat",
             "redis",
             "[::1]",
         ]
@@ -36,6 +37,11 @@ def get_allowed_hosts(allowed_hosts: str):
         text_e = "[%s]: ALLOWED_HOSTS must be set in production" % get_allowed_hosts.__name__
         log.error(text_e)
         raise ImproperlyConfigured(text_e)
+    # The additional merged to an IP numbers for the Docker
+    # IP of Docker is dynamic
+    for third in range(16, 20):  # 172.16.0.0 - 172.19.255.255
+        for fourth in range(0, 256):
+            hosts.append(f"172.{third}.{fourth}")
     return hosts
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
